@@ -4,7 +4,6 @@ import { encoded_communicator, LocalHub } from "../comm/node-comm.ts";
 import {
   SOSDispatcherNode,
   SOSHostNode,
-  SOSMsg,
   SOSMsgDecoder,
   SOSMsgEncoder,
   SOSWorkerNode,

@@ -145,8 +145,6 @@ Deno.test("calculate a sum of squares", async (t) => {
 Deno.test("sum of squares with two hubs", async (t) => {
   const workers = ["A", "B", "C", "D", "E"];
   const dispatcher = "X";
-  const nodes = [dispatcher, ...workers];
-  const n = nodes.length;
   const network = new Map<string, string[]>();
   for (const x of workers) {
     network.set(x, [dispatcher]);
