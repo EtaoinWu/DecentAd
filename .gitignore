@@ -1,0 +1,43 @@
+*.orig
+*.pyc
+*.swp
+.env
+
+/.cargo_home/
+/.idea/
+/.vs/
+/.vscode/
+gclient_config.py_entries
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# MacOS generated files
+.DS_Store
+.DS_Store?
+
+# Flamegraphs
+/flamebench*.svg
+/flamegraph*.svg
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# WPT generated cert files
+/tools/wpt/certs/index.txt*
+/tools/wpt/certs/serial*
