@@ -1,9 +1,10 @@
 {
   "imports": {
     "oak": "https://deno.land/x/oak@v12.1.0/mod.ts",
-    "log": "https://deno.land/std@0.182.0/log/mod.ts",
-    "datetime": "https://deno.land/std@0.182.0/datetime/mod.ts",
-    "std/": "https://deno.land/std@0.182.0/"
+    "log": "https://deno.land/std@0.184.0/log/mod.ts",
+    "datetime": "https://deno.land/std@0.184.0/datetime/mod.ts",
+    "crypto": "https://deno.land/std@0.184.0/crypto/mod.ts",
+    "std/": "https://deno.land/std@0.184.0/"
   },
   "tasks": {
     "run": "deno run --watch --allow-net main.ts"
