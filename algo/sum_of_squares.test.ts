@@ -4,9 +4,10 @@ import { encoded_communicator, LocalHub } from "../comm/node-comm.ts";
 import {
   SOSDispatcherNode,
   SOSHostNode,
-  SOSMsgDecoder,
-  SOSMsgEncoder,
+  decode_sos_msg,
+  encode_sos_msg,
   SOSWorkerNode,
+SOSResult,
 } from "./sum_of_squares.ts";
 
 Deno.test("sum of squares protocol", async (t) => {
@@ -32,8 +33,8 @@ Deno.test("sum of squares protocol", async (t) => {
   const get_communicator = (node: string) =>
     encoded_communicator(
       hub.get_communicator(node),
-      SOSMsgEncoder,
-      SOSMsgDecoder,
+      encode_sos_msg,
+      decode_sos_msg,
     );
 
   const dispatch_node = new SOSDispatcherNode(
@@ -41,14 +42,6 @@ Deno.test("sum of squares protocol", async (t) => {
     get_communicator(dispatch),
     workers,
     host,
-    (sos, sums) => {
-      console.log(`sum of squares: ${sos}`);
-      console.log(`sums: ${sums}`);
-      for (const x of sums) {
-        assertAlmostEquals(x, sos);
-      }
-      return Promise.resolve();
-    },
   );
 
   const host_node = new SOSHostNode(
@@ -64,6 +57,14 @@ Deno.test("sum of squares protocol", async (t) => {
   const nodes = [dispatch_node, host_node, ...worker_nodes];
 
   await t.step("run all", async () => {
-    await Promise.all(nodes.map((node) => node.run()));
+    const res = await Promise.all(nodes.map((node) => node.run()));
+    const dispatch_res = res[0] as SOSResult;
+    const sos = dispatch_res.baseline;
+    const sums = dispatch_res.sos;
+    console.log(`sum of squares: ${sos}`);
+    console.log(`sums: ${sums}`);
+    for (const x of sums) {
+      assertAlmostEquals(x, sos);
+    }
   });
 });

@@ -40,11 +40,11 @@ export type SOSMsg =
   | SOSRound2ScatterMsg
   | SOSRound2ReportMsg;
 
-export function SOSMsgEncoder(msg: SOSMsg): string {
+export function encode_sos_msg(msg: SOSMsg): string {
   return JSON.stringify(msg);
 }
 
-export function SOSMsgDecoder(msg: string): SOSMsg {
+export function decode_sos_msg(msg: string): SOSMsg {
   return JSON.parse(msg);
 }
 
@@ -129,25 +129,27 @@ export class SOSHostNode extends Node<SOSMsg> {
   }
 }
 
-export class SOSDispatcherNode extends Node<SOSMsg> {
+export type SOSResult = {
+  baseline: number;
+  sos: number[];
+}
+
+export class SOSDispatcherNode extends Node<SOSMsg, SOSResult> {
   workers: NodeID[];
   host: NodeID;
-  callback: (sos: number, sums: number[]) => Promise<void>;
 
   constructor(
     me: NodeID,
     comm: Communicator<SOSMsg>,
     workers: NodeID[],
     host: NodeID,
-    callback: (sos: number, sums: number[]) => Promise<void>,
   ) {
     super(me, comm);
     this.workers = workers;
     this.host = host;
-    this.callback = callback;
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<SOSResult> {
     const nodes = [...this.workers, this.host];
 
     await Promise.all(nodes.map(async (node) => {
@@ -182,6 +184,6 @@ export class SOSDispatcherNode extends Node<SOSMsg> {
       sums.push(resp.sos);
     }
 
-    await this.callback(baseline, sums);
+    return { baseline, sos: sums };
   }
 }

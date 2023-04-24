@@ -9,7 +9,6 @@ import { max } from "../../util/algorithm.ts";
 export type DAMSellerSetup = {
   role: "DAM_SELLER";
   item: Item;
-  handle_transaction: (txs: Array<DAMMsg.TransactionUnit>) => Promise<void>;
 };
 
 export type DAMBuyerSetup = {
@@ -20,7 +19,7 @@ export type DAMBuyerSetup = {
 
 export type DAMSetup = DAMSellerSetup | DAMBuyerSetup;
 
-export class DAMSellerNode extends Node<DAMMsg.Msg> {
+export class DAMSellerNode extends Node<DAMMsg.Msg, DAMMsg.TransactionUnit[]> {
   setup: DAMSellerSetup;
 
   constructor(
@@ -32,7 +31,7 @@ export class DAMSellerNode extends Node<DAMMsg.Msg> {
     this.setup = setup;
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<DAMMsg.TransactionUnit[]> {
     const children = await this.comm.neighbors();
     const item = this.setup.item;
     const init_msg = await DAMMsg.dam_wrap({
@@ -76,7 +75,7 @@ export class DAMSellerNode extends Node<DAMMsg.Msg> {
       throw new Error("Unexpected message");
     }
     const transactions = transaction_unwrapped.transactions;
-    await this.setup.handle_transaction(transactions);
+    return transactions;
   }
 }
 
@@ -187,3 +186,5 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
     }
   }
 }
+
+type DAMNode = DAMSellerNode | DAMBuyerNode;

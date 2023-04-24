@@ -1,7 +1,7 @@
 import { NodeID } from "./node-prim.ts";
 import { Communicator } from "./node-comm.ts";
 
-export class Node<Msg> {
+export class Node<Msg, Ret = void> {
   me: NodeID;
   comm: Communicator<Msg>;
 
@@ -10,7 +10,7 @@ export class Node<Msg> {
     this.comm = comm;
   }
 
-  run(): Promise<void> {
-    return Promise.resolve();
+  run(): Promise<Ret> {
+    return Promise.reject();
   }
 }
