@@ -1,20 +1,18 @@
 import { Node } from "../../comm/node-base.ts";
 import { Communicator } from "../../comm/node-comm.ts";
 import { NodeID } from "../../comm/node-prim.ts";
-import { Item } from "./item.ts";
+import { Item, Price } from "./item.ts";
 import * as DAMMsg from "./message.ts";
 import { remove_element } from "../../util/collection.ts";
 import { max } from "../../util/algorithm.ts";
 
 export type DAMSellerSetup = {
-  role: "DAM_SELLER";
   item: Item;
 };
 
 export type DAMBuyerSetup = {
-  role: "DAM_BUYER";
   parent: NodeID;
-  evaluation: (item: Item) => Promise<bigint>;
+  evaluation: (item: Item) => Promise<Price>;
 };
 
 export type DAMSetup = DAMSellerSetup | DAMBuyerSetup;
@@ -75,7 +73,16 @@ export class DAMSellerNode extends Node<DAMMsg.Msg, DAMMsg.TransactionUnit[]> {
       throw new Error("Unexpected message");
     }
     const transactions = transaction_unwrapped.transactions;
-    return transactions;
+    const total_transfer = transactions.reduce(
+      (acc, x) => acc + x.transfer,
+      0,
+    );
+    const seller_tx: DAMMsg.TransactionUnit = {
+      buyer: this.me,
+      transfer: -total_transfer,
+      allocation: 0,
+    }
+    return [seller_tx, ...transactions];
   }
 }
 
@@ -92,13 +99,10 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
   }
 
   async run(): Promise<void> {
-    if (this.setup.role !== "DAM_BUYER") {
-      throw new Error("Invalid role");
-    }
-
     const parent = this.setup.parent;
     const evaluation = this.setup.evaluation;
     const children = remove_element(await this.comm.neighbors(), parent);
+    const degree = children.length;
 
     // Round 1 -- Diffusion
     const diffusion_msg = await this.comm.get_message(parent);
@@ -130,10 +134,10 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
     );
 
     gather_down_msgs.sort((a, b) => (a.subtree_max > b.subtree_max) ? -1 : 1);
-    const max_index = gather_down_msgs[0].index;
-    const max_neighbor = children[max_index];
-    const second_max_price = max(gather_down_msgs[1].subtree_max, price);
-    const max_price = max(gather_down_msgs[0].subtree_max, second_max_price);
+    const max_index = degree >= 1 ? gather_down_msgs[0].index : -1;
+    const max_neighbor = degree >= 1 ? children[max_index] : "";
+    const second_max_price = degree >= 2 ? max(gather_down_msgs[1].subtree_max, price) : price;
+    const max_price = degree >= 1 ? max(gather_down_msgs[0].subtree_max, second_max_price) : price;
 
     const gather_up_msg = await DAMMsg.dam_wrap({
       type: "DAM_Gather",
@@ -153,7 +157,7 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
     const offered_price = scatter_up_unwrapped.external_max;
     if (second_max_price <= price) {
       // Keep
-      const tx = { buyer: this.me, transfer: -offered_price, allocation: true };
+      const tx = { buyer: this.me, transfer: -offered_price, allocation: 1 };
       const tx_msg = await DAMMsg.dam_wrap({
         type: "DAM_TResponse",
         transactions: [tx],
@@ -176,7 +180,7 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
       const tx = {
         buyer: this.me,
         transfer: second_max_price - offered_price,
-        allocation: false,
+        allocation: 0,
       };
       const tx_up_msg = await DAMMsg.dam_wrap({
         type: "DAM_TResponse",

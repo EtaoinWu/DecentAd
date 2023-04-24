@@ -134,8 +134,8 @@ export function encoded_communicator<P, Q>(
   decoder: (p: P) => Q,
 ): Communicator<Q> {
   return {
-    num_nodes: comm.num_nodes,
-    neighbors: comm.neighbors,
+    num_nodes: () => comm.num_nodes(),
+    neighbors: () => comm.neighbors(),
     send_message: async (node: NodeID, message: Q) =>
       await comm.send_message(node, encoder(message)),
     get_message: async (node: NodeID) =>

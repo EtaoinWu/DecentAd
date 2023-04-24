@@ -21,7 +21,7 @@ export type ScatterMsg = {
 export type TransactionUnit = {
   buyer: NodeID;
   transfer: Price;
-  allocation: boolean;
+  allocation: number;
 };
 
 export type TransactionResponseMsg = {

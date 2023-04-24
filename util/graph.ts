@@ -1,5 +1,12 @@
 type Edge = [number, number];
 
+function compare_edge(a: Edge, b: Edge): number {
+  if (a[0] != b[0]) {
+    return a[0] - b[0];
+  }
+  return a[1] - b[1];
+}
+
 export class GraphBase {
   n: number;
   m: number;
@@ -16,7 +23,12 @@ export class EdgeList extends GraphBase {
   constructor(n: number, edges: Edge[]) {
     super(n, edges.length);
     this.edges = edges;
-    this.edges.sort((a, b) => (a[0] > b[0]) ? 1 : -1);
+    this.edges.sort(compare_edge);
+  }
+
+  remove_loops(): EdgeList {
+    const edges = this.edges.filter(([u, v]) => u !== v);
+    return new EdgeList(this.n, edges);
   }
 
   bidirectional(): EdgeList {
