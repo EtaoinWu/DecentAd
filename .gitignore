@@ -41,3 +41,6 @@ yarn-error.log*
 # WPT generated cert files
 /tools/wpt/certs/index.txt*
 /tools/wpt/certs/serial*
+
+# powers of Tau
+ptau/

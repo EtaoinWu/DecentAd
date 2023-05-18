@@ -1,0 +1,13 @@
+template in_array(n) {
+    signal input x;
+    signal input arr[n];
+
+    signal eq[n];
+
+    eq[0] <== x - arr[0];
+    for (var i = 1; i < n; i++) {
+        eq[i] <== (x - arr[i]) * eq[i-1];
+    }
+
+    eq[n-1] === 0;
+}
