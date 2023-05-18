@@ -1,2 +1,2 @@
 export type Item = string;
-export type Price = number;
+export type Price = bigint;

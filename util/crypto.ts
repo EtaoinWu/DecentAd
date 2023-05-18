@@ -1,5 +1,6 @@
 import * as circomlibjs from "https://esm.sh/circomlibjs@0.1.7";
 import { Buffer } from "std/io/buffer.ts";
+import { Hashable, hash_bytes } from "./hash.ts";
 
 export type BufferFromAble = Uint8Array | string | number[] | Buffer;
 
@@ -20,6 +21,7 @@ export type SecKey = BufferFromAble;
 
 export interface Crypto<T> {
   hash(xs: T[]): T;
+  hash_to_field(x: Hashable): Promise<T>;
   pubkey(sk: SecKey): PubKeyT<T>;
   sign(sk: SecKey, msg: T): SignatureT<T>;
   verify(pk: PubKeyT<T>, msg: T, sig: SignatureT<T>): boolean;
@@ -37,6 +39,7 @@ function crypto_bimap<U, V>(
 
   return {
     hash: (xs: V[]) => l(c.hash(xs.map(r))),
+    hash_to_field: (x: Hashable) => c.hash_to_field(x).then(l),
     pubkey: (sk: SecKey) => lcp(c.pubkey(sk)),
     sign: (sk: SecKey, msg: V) => lsig(c.sign(sk, r(msg))),
     verify: (pk: PubKeyT<V>, msg: V, sig: SignatureT<V>) =>
@@ -51,6 +54,7 @@ async function make_crypto_work(): Promise<Crypto<Scalar>> {
   const F = eddsa.F;
   const internal: Crypto<Internal> = {
     hash: (xs: Internal[]) => eddsa.mimc7.multiHash(xs),
+    hash_to_field: hash_bytes,
     pubkey: (sk: SecKey) => eddsa.prv2pub(sk),
     sign: (sk: SecKey, msg: Internal) => eddsa.signMiMC(sk, msg),
     verify: (pk: PubKeyInternal, msg: Internal, sig: SignatureInternal) =>
