@@ -6,5 +6,7 @@ export async function hash(item: string): Promise<string> {
     new TextEncoder().encode(item),
   );
   const hash_array = new Uint8Array(hash_buffer);
-  return Array.from(hash_array, (b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(hash_array, (b) => b.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }

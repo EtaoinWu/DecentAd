@@ -81,7 +81,7 @@ export class DAMSellerNode extends Node<DAMMsg.Msg, DAMMsg.TransactionUnit[]> {
       buyer: this.me,
       transfer: -total_transfer,
       allocation: 0,
-    }
+    };
     return [seller_tx, ...transactions];
   }
 }
@@ -136,8 +136,9 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
     gather_down_msgs.sort((a, b) => (a.subtree_max > b.subtree_max) ? -1 : 1);
     const max_index = degree >= 1 ? gather_down_msgs[0].index : -1;
     const max_neighbor = degree >= 1 ? children[max_index] : "";
-    const second_max_price = degree >= 2 ? max(gather_down_msgs[1].subtree_max, price) : price;
-    const max_price = degree >= 1 ? max(gather_down_msgs[0].subtree_max, second_max_price) : price;
+    const max_price = degree >= 1
+      ? max(gather_down_msgs[0].subtree_max, price)
+      : price;
 
     const gather_up_msg = await DAMMsg.dam_wrap({
       type: "DAM_Gather",
@@ -155,7 +156,12 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
     }
 
     const offered_price = scatter_up_unwrapped.external_max;
-    if (second_max_price <= price) {
+    const offer_to_child_price = max(
+      price,
+      offered_price,
+      ...(degree >= 2 ? [gather_down_msgs[1].subtree_max] : []),
+    );
+    if (offer_to_child_price <= price) {
       // Keep
       const tx = { buyer: this.me, transfer: -offered_price, allocation: 1 };
       const tx_msg = await DAMMsg.dam_wrap({
@@ -167,7 +173,7 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
       // Resell
       const scatter_down_msg = await DAMMsg.dam_wrap({
         type: "DAM_Scatter",
-        external_max: second_max_price,
+        external_max: offer_to_child_price,
       });
       await this.comm.send_message(max_neighbor, scatter_down_msg);
 
@@ -179,7 +185,7 @@ export class DAMBuyerNode extends Node<DAMMsg.Msg> {
       }
       const tx = {
         buyer: this.me,
-        transfer: second_max_price - offered_price,
+        transfer: offer_to_child_price - offered_price,
         allocation: 0,
       };
       const tx_up_msg = await DAMMsg.dam_wrap({

@@ -1,7 +1,7 @@
 import { Node } from "../comm/node-base.ts";
 import { Communicator } from "../comm/node-comm.ts";
 import { NodeID } from "../comm/node-prim.ts";
-import { zip } from "std/collections/mod.ts";
+import { zip } from "std/collections/zip.ts";
 
 type SOSReadyMsg = {
   type: "SOS_READY";
@@ -132,7 +132,7 @@ export class SOSHostNode extends Node<SOSMsg> {
 export type SOSResult = {
   baseline: number;
   sos: number[];
-}
+};
 
 export class SOSDispatcherNode extends Node<SOSMsg, SOSResult> {
   workers: NodeID[];

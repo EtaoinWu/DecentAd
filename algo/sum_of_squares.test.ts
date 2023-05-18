@@ -2,12 +2,12 @@ import { assertAlmostEquals } from "std/testing/asserts.ts";
 
 import { encoded_communicator, LocalHub } from "../comm/node-comm.ts";
 import {
-  SOSDispatcherNode,
-  SOSHostNode,
   decode_sos_msg,
   encode_sos_msg,
+  SOSDispatcherNode,
+  SOSHostNode,
+  SOSResult,
   SOSWorkerNode,
-SOSResult,
 } from "./sum_of_squares.ts";
 
 Deno.test("sum of squares protocol", async (t) => {
