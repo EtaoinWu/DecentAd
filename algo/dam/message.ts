@@ -224,8 +224,16 @@ export class DAMMessageHandler {
     return {
       selfAx: this.pub_key()[0],
       selfAy: this.pub_key()[1],
-      childAx: fix_length(child_pks.map((x) => x[0]), max_width, this.pub_key()[0]),
-      childAy: fix_length(child_pks.map((x) => x[1]), max_width, this.pub_key()[1]),
+      childAx: fix_length(
+        child_pks.map((x) => x[0]),
+        max_width,
+        this.pub_key()[0],
+      ),
+      childAy: fix_length(
+        child_pks.map((x) => x[1]),
+        max_width,
+        this.pub_key()[1],
+      ),
       child_enabled: pad(down_msgs.map((_) => 1n)),
       childmax: pad(down_msgs.map((x) => x.info.subtree_max)),
       selfbid: bid,

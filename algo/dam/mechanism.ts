@@ -232,8 +232,8 @@ export class DAMBuyerNode extends DAMNodeBase {
         g_down_msgs as DAMMsg.DAMWrapper<DAMMsg.GatherMsg>[],
         children.map((x) => this.neighbor_pk.get(x)!),
         price,
-        max_price
-      )
+        max_price,
+      ),
     );
     await this.comm.send_message(parent, gather_up_msg);
 
