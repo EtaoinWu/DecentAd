@@ -1,3 +1,4 @@
+#define BOOL(t) (t) * ((t) - 1) === 0
 template in_array(n) {
     signal input x;
     signal input arr[n];
@@ -10,4 +11,20 @@ template in_array(n) {
     }
 
     eq[n-1] === 0;
+}
+
+template bit_range(w) {
+    signal input enabled;
+    signal input in;
+    signal bits[w];
+
+    BOOL(enabled);
+
+    var total = 0;
+    for (var i = 0; i < w; i++) {
+        bits[i] <-- (in >> i) & 1;
+        BOOL(bits[i]);
+        total += bits[i] * (1 << i);
+    }
+    (total - in) * enabled === 0;
 }

@@ -145,6 +145,7 @@ export class DAMSellerNode extends DAMNodeBase<DAMMsg.TransactionUnit[]> {
 
 export class DAMBuyerNode extends DAMNodeBase {
   setup: DAMBuyerSetup;
+  witnesses: DAMMsg.Witness[] = [];
 
   constructor(
     me: NodeID,
@@ -166,9 +167,9 @@ export class DAMBuyerNode extends DAMNodeBase {
     const children = remove_element(await this.comm.neighbors(), parent);
 
     // Round 1 -- Diffusion
-    const d_up_msg = await this.comm.get_message(parent);
+    const d_up_msg = (await this.comm.get_message(parent)).message;
     const d_up_unwrapped = await mh.verify_and_unwrap(
-      d_up_msg.message,
+      d_up_msg,
       this.neighbor_pk.get(parent)!,
     );
     if (d_up_unwrapped.type !== "DAM_Diffusion") {
@@ -180,6 +181,14 @@ export class DAMBuyerNode extends DAMNodeBase {
     const price = val;
 
     const d_down_msg = await mh.wrap(d_up_unwrapped);
+    this.witnesses.push(
+      await mh.diffusion_witness(
+        d_up_msg as DAMMsg.DAMWrapper<DAMMsg.DiffusionMsg>,
+        d_down_msg,
+        this.neighbor_pk.get(parent)!,
+      ),
+    );
+
     await Promise.all(children.map(async (node) => {
       await this.comm.send_message(
         node,
@@ -190,14 +199,14 @@ export class DAMBuyerNode extends DAMNodeBase {
     // Round 2 -- Gather
     const g_down_msgs = await Promise.all(
       children.map(async (node) => {
-        return await this.comm.get_message(node);
+        return (await this.comm.get_message(node)).message;
       }),
     );
     const g_down_unwrapped = await Promise.all(
       children.map(async (node, i) => {
         const msg = g_down_msgs[i];
         const unwrapped = await mh.verify_and_unwrap(
-          msg.message,
+          msg,
           this.neighbor_pk.get(node)!,
         );
         if (unwrapped.type !== "DAM_Gather") {
@@ -217,6 +226,15 @@ export class DAMBuyerNode extends DAMNodeBase {
       type: "DAM_Gather",
       subtree_max: max_price,
     });
+    this.witnesses.push(
+      await mh.gather_witness(
+        gather_up_msg,
+        g_down_msgs as DAMMsg.DAMWrapper<DAMMsg.GatherMsg>[],
+        children.map((x) => this.neighbor_pk.get(x)!),
+        price,
+        max_price
+      )
+    );
     await this.comm.send_message(parent, gather_up_msg);
 
     // Round 3 -- Scatter

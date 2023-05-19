@@ -2,4 +2,4 @@ pragma circom 2.1.4;
 
 include "../deps/circomlib/circuits/mimc.circom";
 
-component main = MiMC7(91);
+component main = MultiMiMC7(3, 91);

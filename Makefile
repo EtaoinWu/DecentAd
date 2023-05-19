@@ -31,7 +31,7 @@ PUBLICS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.public.json)
 VERIFYS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%_verify)
 
 # Main target
-all: ptau build create_keys prove verify
+all: ptau build witness create_keys prove verify
 
 qwq:
 	@echo $(CIRCUIT_NAMES)
@@ -85,8 +85,11 @@ $(BUILD_DIR)/%.proof.json: $(BUILD_DIR)/%.final.zkey $(BUILD_DIR)/%.wtns
 
 $(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.proof.json
 
+.PHONY : witness
+witness: $(WITNESSES)
+
 .PHONY : prove
-prove: $(WITNESSES) $(PROOFS) $(PUBLICS)
+prove: witness $(PROOFS) $(PUBLICS)
 
 .PHONY : verify 
 verify: $(VERIFYS)
