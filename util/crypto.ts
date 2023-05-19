@@ -1,4 +1,4 @@
-import * as circomlibjs from "https://esm.sh/circomlibjs@0.1.7";
+import * as circomlibjs from "https://esm.sh/circomlibjs@0.1.7?pin=v122";
 import { Buffer } from "std/io/buffer.ts";
 import { hash_bytes, Hashable } from "./hash.ts";
 

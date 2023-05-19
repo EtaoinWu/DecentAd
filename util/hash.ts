@@ -1,4 +1,4 @@
-import { blake2b } from "https://esm.sh/hash-wasm@4.9.0";
+import { blake2b } from "https://esm.sh/hash-wasm@4.9.0?pin=v122";
 
 import { decode } from "std/encoding/hex.ts";
 
