@@ -1,6 +1,6 @@
 import * as circomlibjs from "https://esm.sh/circomlibjs@0.1.7";
 import { Buffer } from "std/io/buffer.ts";
-import { Hashable, hash_bytes } from "./hash.ts";
+import { hash_bytes, Hashable } from "./hash.ts";
 
 export type BufferFromAble = Uint8Array | string | number[] | Buffer;
 

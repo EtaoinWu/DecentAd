@@ -7,6 +7,9 @@
     "std/": "https://deno.land/std@0.187.0/"
   },
   "tasks": {
-    "run": "deno run --watch --allow-net main.ts"
+    "run": "deno run --watch --allow-net main.ts",
+    "lint": "deno lint --ignore='deps,out'",
+    "fmt": "deno fmt --ignore='deps,out'",
+    "check_fmt": "deno fmt --check --ignore='deps,out'"
   }
 }

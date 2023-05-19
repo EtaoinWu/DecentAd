@@ -1,8 +1,6 @@
 import { blake2b } from "https://esm.sh/hash-wasm@4.9.0";
 
-import {
-  decode,
-} from "std/encoding/hex.ts";
+import { decode } from "std/encoding/hex.ts";
 
 export type Hashable = string | Buffer | Uint8Array | Uint16Array | Uint32Array;
 

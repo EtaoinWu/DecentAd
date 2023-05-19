@@ -10,7 +10,7 @@ Deno.test("encoding and decoding bigints", async (t) => {
   });
 
   await t.step("object of bigints", () => {
-    const obj = { a:-1n, b: 0n, c: -3n, d: 4, e: "n", f: "strin" };
+    const obj = { a: -1n, b: 0n, c: -3n, d: 4, e: "n", f: "strin" };
     const encoded = encode_bigint(obj);
     const decoded = decode_bigint<typeof obj>(encoded);
     assertEquals(obj, decoded);
