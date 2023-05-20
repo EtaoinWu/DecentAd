@@ -4,15 +4,22 @@
     "log": "https://deno.land/std@0.187.0/log/mod.ts",
     "datetime": "https://deno.land/std@0.187.0/datetime/mod.ts",
     "crypto": "https://deno.land/std@0.187.0/crypto/mod.ts",
-    "std/": "https://deno.land/std@0.187.0/"
+    "std/": "https://deno.land/std@0.187.0/",
+    "https://esm.sh/v122/ffjavascript@0.2.57/deno/ffjavascript.mjs": "https://gist.githubusercontent.com/EtaoinWu/27096a376a78e0427eb860c08ca85759/raw/ffjavascript-singlethreaded.mjs"
   },
   "tasks": {
     "run": "deno run --watch --allow-net main.ts"
   },
   "lint": {
-    "exclude": ["deps", "out"]
+    "exclude": [
+      "deps",
+      "out"
+    ]
   },
   "fmt": {
-    "exclude": ["deps", "out"]
+    "exclude": [
+      "deps",
+      "out"
+    ]
   }
 }

@@ -1,5 +1,20 @@
-import * as snarkjs from "npm:snarkjs@0.6.1";
+import * as snarkjs from "https://esm.sh/snarkjs@0.6.1?pin=v122";
 import { WitnessCalculatorBuilder } from "https://esm.sh/circom_runtime@0.1.22?pin=v122";
+
+const groth16 = snarkjs.groth16 as {
+  prove: (
+    zkey: ReturnType<typeof wrap>,
+    wtns: ReturnType<typeof wrap>,
+  ) => Promise<{
+    publicSignals: unknown;
+    proof: unknown;
+  }>;
+  verify: (
+    vkey: unknown,
+    publicSignals: unknown,
+    proof: unknown,
+  ) => Promise<boolean>;
+};
 
 function wrap(x: Uint8Array) {
   return {
@@ -44,7 +59,7 @@ export class ZKProver {
   }
 
   async prove(bin_witness: Uint8Array) {
-    const { proof, publicSignals } = await snarkjs.groth16.prove(
+    const { proof, publicSignals } = await groth16.prove(
       wrap(this.zkey),
       wrap(bin_witness),
     );
@@ -57,7 +72,7 @@ export class ZKProver {
   }
 
   async verify<T, U>(proof: T, publicSignals: U) {
-    return await snarkjs.groth16.verify(
+    return await groth16.verify(
       this.vkey,
       publicSignals,
       proof,

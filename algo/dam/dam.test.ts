@@ -94,35 +94,6 @@ Deno.test("DAM small example 1 (with witness)", async (t) => {
   ], true);
 });
 
-Deno.test("DAM small example 2: early stop (with proofs)", async (t) => {
-  const n = 7;
-  const seller = 0;
-  const node_ids = Array.from({ length: n }, (_, i) => i.toString());
-  const parents = [0, 0, 0, 1, 1, 2, 2];
-  const graph = new EdgeList(n, parents.map((p, i) => [p, i]))
-    .remove_loops().bidirectional().to_adjacency_list();
-  const types: ("seller" | "buyer")[] = node_ids.map((_, i) =>
-    i == seller ? "seller" : "buyer"
-  );
-  const belongs = ["a", "b", "a", "a", "c", "c", "c"];
-  const bids = [0, 3, 1, 2, 5, 1, 1];
-  await run_test(
-    t,
-    graph,
-    node_ids,
-    parents,
-    types,
-    bids,
-    belongs,
-    [
-      { buyer: "0", transfer: 1n, allocation: 0 },
-      { buyer: "1", transfer: -1n, allocation: 1 },
-    ],
-    true,
-    true,
-  );
-});
-
 Deno.test("DAM mid example 1: in paper", async (t) => {
   const n = 14;
   const node_ids = ["s", ..."abcdefghijklm".split("")];
@@ -163,4 +134,33 @@ Deno.test("DAM mid example 2: in paper (modified)", async (t) => {
     { buyer: "e", transfer: 0n, allocation: 0 },
     { buyer: "f", transfer: -21n, allocation: 1 },
   ]);
+});
+
+Deno.test("DAM small example 2: early stop (with proofs)", async (t) => {
+  const n = 7;
+  const seller = 0;
+  const node_ids = Array.from({ length: n }, (_, i) => i.toString());
+  const parents = [0, 0, 0, 1, 1, 2, 2];
+  const graph = new EdgeList(n, parents.map((p, i) => [p, i]))
+    .remove_loops().bidirectional().to_adjacency_list();
+  const types: ("seller" | "buyer")[] = node_ids.map((_, i) =>
+    i == seller ? "seller" : "buyer"
+  );
+  const belongs = ["a", "b", "a", "a", "c", "c", "c"];
+  const bids = [0, 3, 1, 2, 5, 1, 1];
+  await run_test(
+    t,
+    graph,
+    node_ids,
+    parents,
+    types,
+    bids,
+    belongs,
+    [
+      { buyer: "0", transfer: 1n, allocation: 0 },
+      { buyer: "1", transfer: -1n, allocation: 1 },
+    ],
+    true,
+    true,
+  );
 });
