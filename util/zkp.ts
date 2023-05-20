@@ -26,9 +26,10 @@ function wrap(x: Uint8Array) {
 
 export async function make_zkprover(
   name: string,
-): Promise<ZKProver> {
+): Promise<ZKProver | DummyProver> {
   const wasm = await Deno.readFile(`./out/${name}.p_js/${name}.p.wasm`);
   return new ZKProver(
+    name,
     await WitnessCalculatorBuilder(wasm),
     await Deno.readFile(`./out/${name}.p.final.zkey`),
     JSON.parse(await Deno.readTextFile(`./out/${name}.p.vkey.json`)),
@@ -42,15 +43,18 @@ interface HasCalculateWTNSBin {
 export type InputT = Record<string, Scalar | Scalar[]>;
 
 export class ZKProver {
+  name: string;
   witnessCalculator: Awaited<ReturnType<typeof WitnessCalculatorBuilder>>;
   zkey: Uint8Array;
   vkey: unknown;
 
   constructor(
+    name: string,
     witnessCalculator: Awaited<ReturnType<typeof WitnessCalculatorBuilder>>,
     zkey: Uint8Array,
     vkey: unknown,
   ) {
+    this.name = name;
     this.witnessCalculator = witnessCalculator;
     this.zkey = zkey;
     this.vkey = vkey;

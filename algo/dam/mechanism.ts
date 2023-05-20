@@ -11,17 +11,16 @@ import {
   GatherWitness,
   Msg,
   Proof,
+  provers,
   ScatterMsg,
   ScatterWitness,
   TransactionResponseMsg,
   TransactionUnit,
   Witness,
-  provers,
 } from "./message.ts";
 import { remove_element } from "../../util/collection.ts";
 import { max } from "../../util/algorithm.ts";
 import { PubKey, SecKey } from "../../util/crypto.ts";
-import { InputT } from "../../util/zkp.ts";
 
 export interface DAMBaseSetup {
   priv_key: SecKey;
@@ -94,7 +93,7 @@ export class DAMSellerNode extends DAMNodeBase<TransactionUnit[]> {
   async run(): Promise<TransactionUnit[]> {
     await this.exchange_pubkeys();
 
-  const mh = this.mh!;
+    const mh = this.mh!;
     const children = await this.comm.neighbors();
     const item = this.setup.item;
     const init_msg = await mh.wrap({
@@ -342,7 +341,11 @@ export class DAMBuyerNode extends DAMNodeBase {
           max_index,
           tx_up_msg,
           tx_down_msg as DAMWrapper<TransactionResponseMsg>,
-          ...this.witnesses as [DiffusionWitness, GatherWitness, ScatterWitness],
+          ...this.witnesses as [
+            DiffusionWitness,
+            GatherWitness,
+            ScatterWitness,
+          ],
         );
         this.witnesses.push(t_witness);
         if (this.base_setup.is_generate_proof) {

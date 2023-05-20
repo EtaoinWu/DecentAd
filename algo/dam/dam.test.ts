@@ -87,13 +87,24 @@ Deno.test("DAM mini example", async (t) => {
   );
   const belongs = ["a", "a", "a"];
   const bids = [0, 3, 1];
-  await run_test(t, graph, node_ids, parents, types, bids, belongs, [
-    { buyer: "0", transfer: 1n, allocation: 0 },
-    { buyer: "1", transfer: -1n, allocation: 1 },
-  ], true, true);
+  await run_test(
+    t,
+    graph,
+    node_ids,
+    parents,
+    types,
+    bids,
+    belongs,
+    [
+      { buyer: "0", transfer: 1n, allocation: 0 },
+      { buyer: "1", transfer: -1n, allocation: 1 },
+    ],
+    true,
+    true,
+  );
 });
 
-Deno.test("DAM small example 1 (with witness)", async (t) => {
+Deno.test("DAM small example 1 (with proofs)", async (t) => {
   const n = 7;
   const seller = 0;
   const node_ids = Array.from({ length: n }, (_, i) => i.toString());
@@ -105,14 +116,25 @@ Deno.test("DAM small example 1 (with witness)", async (t) => {
   );
   const belongs = ["a", "b", "a", "a", "c", "c", "c"];
   const bids = [0, 3, 1, 7, 5, 1, 1];
-  await run_test(t, graph, node_ids, parents, types, bids, belongs, [
-    { buyer: "0", transfer: 1n, allocation: 0 },
-    { buyer: "1", transfer: 4n, allocation: 0 },
-    { buyer: "3", transfer: -5n, allocation: 1 },
-  ], true);
+  await run_test(
+    t,
+    graph,
+    node_ids,
+    parents,
+    types,
+    bids,
+    belongs,
+    [
+      { buyer: "0", transfer: 1n, allocation: 0 },
+      { buyer: "1", transfer: 4n, allocation: 0 },
+      { buyer: "3", transfer: -5n, allocation: 1 },
+    ],
+    true,
+    true,
+  );
 });
 
-Deno.test("DAM small example 2: early stop (with proofs)", async (t) => {
+Deno.test("DAM small example 2: early stop (with witness)", async (t) => {
   const n = 7;
   const seller = 0;
   const node_ids = Array.from({ length: n }, (_, i) => i.toString());
@@ -137,7 +159,7 @@ Deno.test("DAM small example 2: early stop (with proofs)", async (t) => {
       { buyer: "1", transfer: -1n, allocation: 1 },
     ],
     true,
-    true,
+    false,
   );
 });
 
@@ -175,11 +197,21 @@ Deno.test("DAM mid example 2: in paper (modified; full)", async (t) => {
   );
   const belongs = parents.map((_) => "ABCD"[Math.floor(Math.random() * 4)]);
   const bids = [0, 8, 5, 12, 19, 13, 30, 23, 29, 21, 15, 31, 26, 11];
-  await run_test(t, graph, node_ids, parents, types, bids, belongs, [
-    { buyer: "s", transfer: 12n, allocation: 0 },
-    { buyer: "b", transfer: 9n, allocation: 0 },
-    { buyer: "e", transfer: 0n, allocation: 0 },
-    { buyer: "f", transfer: -21n, allocation: 1 },
-  ], true, true);
+  await run_test(
+    t,
+    graph,
+    node_ids,
+    parents,
+    types,
+    bids,
+    belongs,
+    [
+      { buyer: "s", transfer: 12n, allocation: 0 },
+      { buyer: "b", transfer: 9n, allocation: 0 },
+      { buyer: "e", transfer: 0n, allocation: 0 },
+      { buyer: "f", transfer: -21n, allocation: 1 },
+    ],
+    true,
+    true,
+  );
 });
-

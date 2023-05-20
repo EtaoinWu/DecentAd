@@ -108,8 +108,10 @@ export type ScatterWitness = {
   parentAy: Scalar;
   childAx: Scalar[];
   childAy: Scalar[];
+  child_enabled: Scalar[];
   childmax: Scalar[];
   selfbid: Scalar;
+  selfmax: Scalar;
   self_g_sigR8x: Scalar;
   self_g_sigR8y: Scalar;
   self_g_sigS: Scalar;
@@ -358,8 +360,10 @@ export class DAMMessageHandler {
       parentAy: d_wtns.parentAy,
       childAx: g_wtns.childAx,
       childAy: g_wtns.childAy,
+      child_enabled: g_wtns.child_enabled,
       childmax: g_wtns.childmax,
       selfbid: g_wtns.selfbid,
+      selfmax: g_wtns.selfmax,
       self_g_sigR8x: g_wtns.self_sigR8x,
       self_g_sigR8y: g_wtns.self_sigR8y,
       self_g_sigS: g_wtns.self_sigS,
@@ -424,15 +428,18 @@ export class DAMMessageHandler {
     tx_up_msg: DAMWrapper<TransactionResponseMsg>,
     tx_down_msg: DAMWrapper<TransactionResponseMsg>,
     _d_wtns: DiffusionWitness,
-    g_wtns: GatherWitness,
+    _g_wtns: GatherWitness,
     s_wtns: ScatterWitness,
   ): Promise<TxPassWitness> {
     const up_txs = await tx_transpose(tx_up_msg.info.transactions);
     const down_txs = await tx_transpose(tx_down_msg.info.transactions);
 
     return {
-      child_enabled: g_wtns.child_enabled,
-      is_xchild: fix_length(Array(max_index).fill(0n).concat(1n), max_width, 0n),
+      is_xchild: fix_length(
+        Array(max_index).fill(0n).concat(1n),
+        max_width,
+        0n,
+      ),
       my_name: await crypto.hash_to_field(me),
       self_t_sigR8x: tx_up_msg.sig.R8[0],
       self_t_sigR8y: tx_up_msg.sig.R8[1],
@@ -440,14 +447,13 @@ export class DAMMessageHandler {
       self_tx_allo: fix_length(up_txs.allo, max_height, 0n),
       self_tx_money: fix_length(up_txs.money, max_height, 0n),
       self_tx_who: fix_length(up_txs.who, max_height, 0n),
-      selfmax: g_wtns.selfmax,
       xchild_t_sigR8x: tx_down_msg.sig.R8[0],
       xchild_t_sigR8y: tx_down_msg.sig.R8[1],
       xchild_t_sigS: tx_down_msg.sig.S,
       xchild_tx_allo: fix_length(down_txs.allo, max_height, 0n),
       xchild_tx_money: fix_length(down_txs.money, max_height, 0n),
       xchild_tx_who: fix_length(down_txs.who, max_height, 0n),
-      ...s_wtns
+      ...s_wtns,
     };
   }
 
