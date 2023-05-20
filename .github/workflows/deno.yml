@@ -16,22 +16,31 @@ jobs:
     steps:
       - name: Setup repo
         uses: actions/checkout@v3
-
-      - name: Setup Rust
-        uses: ATiltedTree/setup-rust@v1.0.5
         with:
-          rust-version: stable
+          submodules: recursive
       
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.5.2
         with:
           node-version: 18.x
       
-      - name: Install Dependencies
-        run: bash ./install_deps.sh
+      - name: Install NPM Dependencies
+        run: |
+          npm install -g snarkjs
+      
+      - name: Install Circom
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: iden3/circom
+          version: v2.1.5
+          file: circom-linux-amd64
+          target: ./deps/circom
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build with Make
         run: make build
+        env:
+          CIRCOM: ./deps/circom
 
       - name: Setup Deno
         # uses: denoland/setup-deno@v1

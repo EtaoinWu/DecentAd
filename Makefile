@@ -1,5 +1,5 @@
-CIRCOM := circom
-SNARKJS := snarkjs
+CIRCOM ?= circom
+SNARKJS ?= snarkjs
 RM := rm
 MKDIR := mkdir
 RMDIR := rm -rf
