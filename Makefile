@@ -45,13 +45,11 @@ qwq:
 .PHONY : ptau
 ptau: $(PTAU)
 
-$(BUILD_DIR):
-	$(MKDIR) -p $@
-
 $(BUILD_DIR)/%.ptau:
 	$(dir_guard)
-	$(SNARKJS) powersoftau new bn128 14 $@.phase1
-	$(SNARKJS) powersoftau prepare phase2 $@.phase1 $@
+	# $(SNARKJS) powersoftau new bn128 14 $@.phase1
+	# $(SNARKJS) powersoftau prepare phase2 $@.phase1 $@
+	wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_18.ptau -O $@
 
 .PHONY : build
 build: $(GENERATED_CIRCUITS) $(R1CSS)
@@ -103,6 +101,7 @@ $(BUILD_DIR)/%_verify: $(BUILD_DIR)/%.vkey.json $(BUILD_DIR)/%.public.json $(BUI
 
 .PHONY : clean
 clean:
+	mkdir -p ptau
 	mv $(PTAU) ptau/
 	$(RMDIR) $(BUILD_DIR)
 	$(MKDIR) -p $(BUILD_DIR)
