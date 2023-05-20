@@ -1,3 +1,5 @@
+#pragma once
+
 #define BOOL(t) (t) * ((t) - 1) === 0
 template in_array(n) {
     signal input x;
@@ -43,18 +45,59 @@ template bit_range(w) {
     (total - in) * enabled === 0;
 }
 
+template ite() {
+    signal input cond;
+    signal input t;
+    signal input e;
+    signal output out;
+
+    out <== cond * (t - e) + e;
+}
+
+#define BIT_RANGE_VAR(v, e, name) \
+    bit_range_##name = bit_range(BID_BITS); \
+    bit_range_##name.in <== v; \
+    bit_range_##name.enabled <== e
+
 template threeway(w) {
     signal input in;
     signal output out;
     out <-- (in > 0 ? 1 : (in < 0 ? -1 : 0));
-    signal neq0;
-    neq0 <== (1 + out) * (1 - out);
-    neq0 * out === 0;
-    signal abs_plus_ifzero;
-    abs_plus_ifzero <== in * out + neq0;
+    signal inv;
+    inv <-- in!=0 ? 1/in : 0;
+    signal output ne;
+    ne <== inv * in;
+    in * (1 - ne) === 0;
+    BOOL(ne);
+    (1 - ne) === (1 + out) * (1 - out);
+    (1 - ne) * out === 0;
+    signal res;
+    res <== in * out - ne;
     component in_range = bit_range(w);
     in_range.enabled <== 1;
-    in_range.in <== abs_plus_ifzero;
+    in_range.in <== res;
+    signal output eq;
+    eq <== 1 - ne;
+    signal output lt;
+    lt <== out * (out - 1) / 2;
+    signal output gt;
+    gt <== (out + 1) * out / 2;
+    signal output le;
+    le <== 1 - gt;
+    signal output ge;
+    ge <== 1 - lt;
+}
+
+template inner_prod(n) {
+    signal input a[n];
+    signal input b[n];
+    signal tmp[n];
+    signal output out;
+    tmp[0] <== a[0] * b[0];
+    for (var i = 1; i < n; i++) {
+        tmp[i] <== a[i] * b[i] + tmp[i-1];
+    }
+    out <== tmp[n-1];
 }
 
 template max_in_array(n, w) {

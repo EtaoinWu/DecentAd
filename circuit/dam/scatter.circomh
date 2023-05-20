@@ -1,0 +1,60 @@
+#pragma once
+
+#include "head.circomh"
+#include "base.circomh"
+#include "dam_types.circomh"
+#include "primitive.circomh"
+#define SCATTER_SELFOFFER \
+  component BIT_RANGE_VAR(parentoffer, 1, parentoffer); \
+  component BIT_RANGE_VAR(selfoffer, 1, selfoffer); \
+  \
+  component selfoffer_second_max = kth_in_array(width + 2, BID_BITS); \
+  selfoffer_second_max.x <== selfoffer; \
+  selfoffer_second_max.k <== 1; \
+  for (var i = 0; i < width; i++) { \
+    selfoffer_second_max.arr[i] <== childmax[i]; \
+  } \
+  selfoffer_second_max.arr[width] <== selfbid; \
+  selfoffer_second_max.arr[width + 1] <== parentoffer
+
+#define SCATTER_PARENT_SIG_VERIF \
+  component parent_hasher = HASHER(2);  \
+  signal parent_hash; \
+  parent_hasher.in[0] <== 3;  \
+  parent_hasher.in[1] <== parentoffer;  \
+  parent_hasher.out ==> parent_hash;  \
+  \
+  component parent_verifier = VERIFIER(); \
+  parent_verifier.enabled <== 1;  \
+  assign_pubkey(parent_verifier, , , parent, ); \
+  assign_signature(parent_verifier, , , parent_sig, );  \
+  parent_verifier.M <== parent_hash
+
+template dam_scatter(width) {
+  new_pubkey(input, self, );
+  new_pubkey(input, parent, );
+  signal input childmax[width];
+  signal input selfbid;
+  signal input parentoffer;
+  signal input selfoffer;
+  new_signature(input, self_sig, );
+  new_signature(input, parent_sig, );
+
+  SCATTER_SELFOFFER;
+
+  component BIT_RANGE_VAR(selfoffer - selfbid - 1, 1, selfbid_lt_selfoffer);
+  
+  component self_hasher = HASHER(2);
+  signal self_hash;
+  self_hasher.in[0] <== 3;
+  self_hasher.in[1] <== selfoffer;
+  self_hasher.out ==> self_hash;
+
+  component self_verifier = VERIFIER();  
+  self_verifier.enabled <== 1;
+  assign_pubkey(self_verifier, , , self, );
+  assign_signature(self_verifier, , , self_sig, );
+  self_verifier.M <== self_hash;
+  
+  SCATTER_PARENT_SIG_VERIF;
+}

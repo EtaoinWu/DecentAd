@@ -12,12 +12,16 @@ import {
   Msg,
   Proof,
   ScatterMsg,
+  ScatterWitness,
+  TransactionResponseMsg,
   TransactionUnit,
   Witness,
+  provers,
 } from "./message.ts";
 import { remove_element } from "../../util/collection.ts";
 import { max } from "../../util/algorithm.ts";
 import { PubKey, SecKey } from "../../util/crypto.ts";
+import { InputT } from "../../util/zkp.ts";
 
 export interface DAMBaseSetup {
   priv_key: SecKey;
@@ -90,7 +94,7 @@ export class DAMSellerNode extends DAMNodeBase<TransactionUnit[]> {
   async run(): Promise<TransactionUnit[]> {
     await this.exchange_pubkeys();
 
-    const mh = this.mh!;
+  const mh = this.mh!;
     const children = await this.comm.neighbors();
     const item = this.setup.item;
     const init_msg = await mh.wrap({
@@ -198,7 +202,7 @@ export class DAMBuyerNode extends DAMNodeBase {
       this.witnesses.push(d_witness);
       if (this.base_setup.is_generate_proof) {
         this.proofs.push(
-          await mh.provers[this.proofs.length].full_prove(d_witness),
+          await provers.diffusion.full_prove(d_witness),
         );
       }
     }
@@ -234,7 +238,8 @@ export class DAMBuyerNode extends DAMNodeBase {
     const max_price = max(price, ...children_maxes);
     const max_index = children_maxes.indexOf(max_price);
     const max_child = children[max_index];
-    const second_max = max(price, ...remove_element(children_maxes, max_price));
+    const all_but_max = remove_element([price, ...children_maxes], max_price);
+    const second_max = max(0n, ...all_but_max);
 
     const gather_up_msg = await mh.wrap({
       type: "DAM_Gather",
@@ -251,7 +256,7 @@ export class DAMBuyerNode extends DAMNodeBase {
       this.witnesses.push(g_witness);
       if (this.base_setup.is_generate_proof) {
         this.proofs.push(
-          await mh.provers[this.proofs.length].full_prove(g_witness),
+          await provers.gather.full_prove(g_witness),
         );
       }
     }
@@ -276,6 +281,21 @@ export class DAMBuyerNode extends DAMNodeBase {
         type: "DAM_TResponse",
         transactions: [tx],
       });
+      if (this.base_setup.is_generate_witness) {
+        const t_witness = await mh.tx_winner_witness(
+          this.me,
+          child_offer,
+          s_up_msg as DAMWrapper<ScatterMsg>,
+          tx_msg,
+          ...this.witnesses as [DiffusionWitness, GatherWitness],
+        );
+        this.witnesses.push(t_witness);
+        if (this.base_setup.is_generate_proof) {
+          this.proofs.push(
+            await provers.trans_winner.full_prove(t_witness),
+          );
+        }
+      }
       await this.comm.send_message(parent, tx_msg);
     } else {
       // Resell
@@ -292,16 +312,16 @@ export class DAMBuyerNode extends DAMNodeBase {
         this.witnesses.push(s_witness);
         if (this.base_setup.is_generate_proof) {
           this.proofs.push(
-            await mh.provers[this.proofs.length].full_prove(s_witness),
+            await provers.scatter.full_prove(s_witness),
           );
         }
       }
       await this.comm.send_message(max_child, s_down_msg);
 
       // Round 4 -- Transaction Response
-      const tx_down_msg = await this.comm.get_message(max_child);
+      const tx_down_msg = (await this.comm.get_message(max_child)).message;
       const tx_down_unwrapped = await mh.verify_and_unwrap(
-        tx_down_msg.message,
+        tx_down_msg,
         this.neighbor_pk.get(max_child)!,
       );
       if (tx_down_unwrapped.type !== "DAM_TResponse") {
@@ -316,6 +336,21 @@ export class DAMBuyerNode extends DAMNodeBase {
         type: "DAM_TResponse",
         transactions: [tx, ...tx_down_unwrapped.transactions],
       });
+      if (this.base_setup.is_generate_witness) {
+        const t_witness = await mh.tx_pass_witness(
+          this.me,
+          max_index,
+          tx_up_msg,
+          tx_down_msg as DAMWrapper<TransactionResponseMsg>,
+          ...this.witnesses as [DiffusionWitness, GatherWitness, ScatterWitness],
+        );
+        this.witnesses.push(t_witness);
+        if (this.base_setup.is_generate_proof) {
+          this.proofs.push(
+            await provers.trans_pass.full_prove(t_witness),
+          );
+        }
+      }
       await this.comm.send_message(parent, tx_up_msg);
     }
   }

@@ -1,0 +1,163 @@
+#pragma once
+
+#include "head.circomh"
+#include "base.circomh"
+#include "dam_types.circomh"
+#include "primitive.circomh"
+#include "scatter.circomh"
+
+#define THREEWAY_COMPARE(x, y, z, name, arr) \
+  name##_ter arr = threeway(BID_BITS); \
+  name##_ter arr.in <== x - y; \
+  name##_ter arr.z 
+
+#define ITE(x0, x1, x2, name) \
+  name##_ite = ite(); \
+  name##_ite .cond <== x0; \
+  name##_ite .t <== x1; \
+  name##_ite .e <== x2; \
+  name##_ite .out
+
+template hash_tx() {
+  new_tx(input, tx, );
+  component hasher = HASHER(3);
+  hasher.in[0] <== tx_who;
+  hasher.in[1] <== tx_allo;
+  hasher.in[2] <== tx_money;
+  signal output out;
+  hasher.out ==> out;
+}
+
+
+template hash_tx_list(length) {
+  new_tx(input, tx, [length]);
+  signal output subhash_result[length];
+  component subhash[length];
+  component hasher = HASHER(length + 1);
+  hasher.in[0] <== 4;
+  for(var i = 0; i < length; i++) {
+    subhash[i] = hash_tx();
+    assign_tx(subhash[i], tx, , tx, [i]);
+    subhash[i].out ==> subhash_result[i];
+    subhash_result[i] ==> hasher.in[i+1];
+  }
+  signal output out;
+  hasher.out ==> out;
+}
+
+#define TRANSACT_SIG_VERIF(name) \
+  component name##_tx_hasher = hash_tx_list(height); \
+  for (var i = 0; i < height; i++) { \
+    assign_tx(name##_tx_hasher, tx, [i], name##_tx, [i]); \
+  } \
+  signal name##_tx_hash; \
+  name##_tx_hasher.out ==> name##_tx_hash; \
+  \
+  component name##_verifier = VERIFIER();   \
+  name##_verifier.enabled <== 1; \
+  assign_pubkey(name##_verifier, , , name, ); \
+  assign_signature(name##_verifier, , , name##_sig, ); \
+  name##_verifier.M <== name##_tx_hash
+
+template dam_transaction_winner(width, height) {
+  signal input my_name;
+  new_pubkey(input, self, );
+  new_pubkey(input, parent, );
+  signal input childmax[width];
+  signal input selfbid;
+  signal input parentoffer;
+  signal input selfoffer;
+  new_tx(input, self_tx, [height]);
+  new_signature(input, self_sig, );
+  new_signature(input, parent_sig, );
+  
+  SCATTER_SELFOFFER;
+
+  // winner condition
+  component BIT_RANGE_VAR(selfbid - selfoffer, 1, selfbid_lt_selfoffer);
+
+  new_tx(, zero_tx, );
+  zero_tx_who <== 0;
+  zero_tx_allo <== 0;
+  zero_tx_money <== 0;
+
+  for (var i = 1; i < height; i++) {
+    // self_tx[i] === zero_tx
+    equal_tx(self_tx, [i], zero_tx, );
+  }
+  
+  new_tx(, my_tx, );
+  // my_tx = self_tx[0]
+  copy_tx(my_tx, , self_tx, [0]);
+
+  my_tx_who === my_name;
+  my_tx_money === -parentoffer;
+  my_tx_allo === 1;
+
+  SCATTER_PARENT_SIG_VERIF;
+  TRANSACT_SIG_VERIF(self);
+}
+
+template dam_transaction_pass(width, height) {
+  signal input my_name;
+  new_pubkey(input, self, );
+  new_pubkey(input, child, [width]);
+  signal input childmax[width];
+  signal input parentoffer;
+  signal input selfoffer;
+  signal input selfmax;
+  signal input is_xchild[width];
+  new_tx(input, self_tx, [height]);
+  new_tx(input, xchild_tx, [height]);
+  
+  new_signature(input, self_sig, );
+  new_signature(input, xchild_sig, );
+
+  new_tx(, my_tx, );
+  // my_tx = self_tx[0]
+  copy_tx(my_tx, , self_tx, [0]);
+  my_tx_who === my_name;
+  my_tx_money === selfoffer - parentoffer;
+  my_tx_allo === 0;
+
+  for (var i = 1; i < height; i++) {
+    // self_tx[i] === xchild_tx[i-1]
+    equal_tx(self_tx, [i], xchild_tx, [i-1]);
+  }
+
+  new_tx(, zero_tx, );
+  zero_tx_who <== 0;
+  zero_tx_allo <== 0;
+  zero_tx_money <== 0;
+
+  equal_tx(zero_tx, , xchild_tx, [height-1]);
+
+  var xchild_count = 0;
+  for (var i = 0; i < width; i++) {
+    BOOL(is_xchild[i]);
+    xchild_count += is_xchild[i];
+  }
+  xchild_count === 1;
+
+  component xchild_inner_max = inner_prod(width);
+  for (var i = 0; i < width; i++) {
+    xchild_inner_max.a[i] <== is_xchild[i];
+    xchild_inner_max.b[i] <== childmax[i];
+  }
+  selfmax === xchild_inner_max.out;
+
+  new_pubkey(, xchild, );
+  
+#define temp(field) \
+  component xchild_inner##field = inner_prod(width); \
+  for (var i = 0; i < width; i++) { \
+    xchild_inner##field .a[i] <== is_xchild[i]; \
+    xchild_inner##field .b[i] <== child##field [i]; \
+  } \
+  xchild##field <== xchild_inner##field .out
+  foreach(temp, ;, pubkey_struct);
+#undef temp
+
+  TRANSACT_SIG_VERIF(self);
+  TRANSACT_SIG_VERIF(xchild);
+}

@@ -1,0 +1,46 @@
+#include "gather.circomh"
+#include "scatter.circomh"
+
+#define SCATTER_MAIN \
+  component gather = dam_gather(width); \
+  component scatter = dam_scatter(width); \
+  assign_pubkey(gather, self, , self, ); \
+  assign_pubkey(scatter, self, , self, ); \
+  assign_pubkey(scatter, parent, , parent, ); \
+  gather.selfbid <== selfbid; \
+  scatter.selfbid <== selfbid; \
+  gather.selfmax <== selfmax; \
+  scatter.parentoffer <== parentoffer; \
+  scatter.selfoffer <== selfoffer; \
+  assign_signature(gather, self_sig, , self_g_sig, ); \
+  assign_signature(scatter, self_sig, , self_s_sig, ); \
+  assign_signature(scatter, parent_sig, , parent_s_sig, ); \
+  for (var i = 0; i < width; i++) { \
+    assign_pubkey(gather, child, [i], child, [i]); \
+    gather.child_enabled[i] <== child_enabled[i]; \
+    gather.childmax[i] <== childmax[i]; \
+    scatter.childmax[i] <== childmax[i]; \
+    assign_signature(gather, child_sig, [i], child_g_sig, [i]); \
+  }
+
+template dam_scatter_main(width) {
+  new_pubkey(input, self, ); 
+  new_pubkey(input, parent, ); 
+  new_pubkey(input, child, [width]); 
+  
+  signal input child_enabled[width]; 
+  signal input childmax[width]; 
+  signal input selfbid; 
+  signal input selfmax; 
+  
+  new_signature(input, self_g_sig, ); 
+  new_signature(input, child_g_sig, [width]); 
+  
+  signal input parentoffer; 
+  signal input selfoffer; 
+  
+  new_signature(input, self_s_sig, ); 
+  new_signature(input, parent_s_sig, ); 
+  
+  SCATTER_MAIN
+}

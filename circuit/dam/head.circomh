@@ -1,0 +1,5 @@
+#pragma once
+include "eddsamimc.circom";
+include "mimc.circom";
+include "comparators.circom";
+include "gates.circom";

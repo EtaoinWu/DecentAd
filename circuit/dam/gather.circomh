@@ -1,0 +1,62 @@
+#pragma once
+
+#include "head.circomh"
+#include "base.circomh"
+#include "dam_types.circomh"
+#include "primitive.circomh"
+
+template dam_gather(width) {
+  new_pubkey(input, self, );
+  new_pubkey(input, child, [width]);
+  signal input child_enabled[width];
+  signal input childmax[width];
+  signal input selfbid;
+  signal input selfmax;
+  new_signature(input, self_sig, );
+  new_signature(input, child_sig, [width]);
+
+  component BIT_RANGE_VAR(selfbid, 1, selfbid);
+  component BIT_RANGE_VAR(selfmax, 1, selfmax);
+  component BIT_RANGE_VAR(selfmax - selfbid, 1, self_range);
+  component bit_range_childmax[width];
+  component bit_range_child_range[width];
+
+  for (var i = 0; i < width; i++) {
+    BOOL(child_enabled[i]);
+    if (i > 0) {
+      (1 - child_enabled[i-1]) * (child_enabled[i]) === 0;
+    }
+    childmax[i] * (1 - child_enabled[i]) === 0;
+    BIT_RANGE_VAR(childmax[i], child_enabled[i], childmax[i]);
+    BIT_RANGE_VAR(selfmax - childmax[i], child_enabled[i], child_range[i]);
+  }
+
+  component selfmax_in_array = in_array(width + 1);
+  selfmax_in_array.arr[width] <== selfbid;
+  for (var i = 0; i < width; i++) {
+    selfmax_in_array.arr[i] <== childmax[i];
+  }
+  selfmax_in_array.x <== selfmax;
+
+  component up_hasher = HASHER(2);
+  component up_verifier = VERIFIER();
+  up_hasher.in[0] <== 2;
+  up_hasher.in[1] <== selfmax;
+  up_hasher.out ==> up_verifier.M;
+  up_verifier.enabled <== 1;
+  assign_pubkey(up_verifier, , , self, );
+  assign_signature(up_verifier, , , self_sig, );
+
+  component down_hasher[width];
+  component down_verifier[width];
+  for (var i = 0; i < width; i++) {
+    down_hasher[i] = HASHER(2);
+    down_verifier[i] = VERIFIER();
+    down_hasher[i].in[0] <== 2;
+    down_hasher[i].in[1] <== childmax[i];
+    down_hasher[i].out ==> down_verifier[i].M;
+    down_verifier[i].enabled <== child_enabled[i];
+    assign_pubkey(down_verifier[i], , , child, [i]);
+    assign_signature(down_verifier[i], , , child_sig, [i]);
+  }
+}

@@ -1,5 +1,5 @@
 pragma circom 2.1.5;
 
-#include "dam.circompph"
+#include "dam/gather.circomh"
 
 component main {public [pubkey_of(self), pubkey_of(child), signature_of(self_sig)]} = dam_gather(DAM_WIDTH);

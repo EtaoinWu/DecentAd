@@ -29,4 +29,18 @@ Deno.test("encoding and decoding bigints", async (t) => {
     const decoded = decode_bigint<typeof obj>(encoded);
     assertEquals(obj, decoded);
   });
+
+  await t.step("complicated object", () => {
+    const obj = {
+      a: 1n,
+      b: -2n,
+      c: [-3n, 0n, 5, { g: 6n }, { h: "nstrn" }],
+      d: 4,
+      e: "n",
+      f: "strin",
+    };
+    const encoded = encode_bigint(obj);
+    const decoded = decode_bigint<typeof obj>(encoded);
+    assertEquals(obj, decoded);
+  });
 });

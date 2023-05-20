@@ -1,0 +1,65 @@
+pragma circom 2.1.5;
+
+#include "dam/gather.circomh"
+#include "dam/scatter.circomh"
+#include "dam/transaction.circomh"
+
+template dam_transaction_winner_main(width, height) {
+  signal input my_name;
+  
+  new_pubkey(input, self, );
+  new_pubkey(input, parent, );
+  new_pubkey(input, child, [width]);
+
+  signal input child_enabled[width];
+  signal input childmax[width];
+  signal input selfbid;
+  signal input selfmax;
+
+  new_signature(input, self_g_sig, );
+  new_signature(input, child_g_sig, [width]);
+
+  signal input parentoffer;
+  signal input selfoffer;
+  
+  new_tx(input, self_tx, [height]);
+
+  new_signature(input, parent_s_sig, );
+  new_signature(input, self_t_sig, );
+
+  component gather = dam_gather(width);
+  assign_pubkey(gather, self, , self, );
+  gather.selfbid <== selfbid;
+  gather.selfmax <== selfmax;
+  assign_signature(gather, self_sig, , self_g_sig, );
+
+  component txwinner = dam_transaction_winner(width, height);
+  txwinner.my_name <== my_name;
+  assign_pubkey(txwinner, self, , self, );
+  assign_pubkey(txwinner, parent, , parent, );
+  txwinner.selfbid <== selfbid;
+  txwinner.parentoffer <== parentoffer;
+  txwinner.selfoffer <== selfoffer;
+  assign_signature(txwinner, self_sig, , self_t_sig, );
+  assign_signature(txwinner, parent_sig, , parent_s_sig, );
+  for (var i = 0; i < width; i++) {
+    assign_pubkey(gather, child, [i], child, [i]);
+    gather.child_enabled[i] <== child_enabled[i];
+    gather.childmax[i] <== childmax[i];
+    assign_signature(gather, child_sig, [i], child_g_sig, [i]);
+
+    txwinner.childmax[i] <== childmax[i];
+  }
+
+  for (var i = 0; i < height; i++) {
+    assign_tx(txwinner, self_tx, [i], self_tx, [i]);
+  }
+}
+
+
+component main {public [pubkey_of(self), 
+                        pubkey_of(child), 
+                        pubkey_of(parent), 
+                        signature_of(self_g_sig), 
+                        signature_of(self_t_sig),
+                        tx_of(self_tx)]} = dam_transaction_winner_main(DAM_WIDTH, DAM_HEIGHT);

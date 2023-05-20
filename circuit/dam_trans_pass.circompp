@@ -1,0 +1,62 @@
+pragma circom 2.1.5;
+
+#include "dam/main_scatter.circomh"
+#include "dam/transaction.circomh"
+
+template dam_transaction_pass_main(width, height) {
+  signal input my_name;
+
+  new_pubkey(input, self, ); 
+  new_pubkey(input, parent, ); 
+  new_pubkey(input, child, [width]); 
+  
+  signal input child_enabled[width]; 
+  signal input childmax[width]; 
+  signal input selfbid; 
+  signal input selfmax; 
+  signal input parentoffer; 
+  signal input selfoffer; 
+  
+  new_signature(input, self_g_sig, ); 
+  new_signature(input, child_g_sig, [width]); 
+  
+  new_signature(input, self_s_sig, ); 
+  new_signature(input, parent_s_sig, ); 
+
+  signal input is_xchild[width];
+  
+  new_signature(input, self_t_sig, );
+  new_signature(input, xchild_t_sig, );
+
+  new_tx(input, self_tx, [height]);
+  new_tx(input, xchild_tx, [height]);
+
+  SCATTER_MAIN
+
+  component txpass = dam_transaction_pass(width, height);
+  txpass.my_name <== my_name;
+  assign_pubkey(txpass, self, , self, ); 
+  txpass.selfmax <== selfmax; 
+  txpass.parentoffer <== parentoffer; 
+  txpass.selfoffer <== selfoffer; 
+  assign_signature(txpass, self_sig, , self_t_sig, ); 
+  assign_signature(txpass, xchild_sig, , xchild_t_sig, ); 
+  for (var i = 0; i < width; i++) { 
+    assign_pubkey(txpass, child, [i], child, [i]); 
+    txpass.is_xchild[i] <== is_xchild[i]; 
+    txpass.childmax[i] <== childmax[i]; 
+  }
+
+  for (var i = 0; i < height; i++) {
+    assign_tx(txpass, self_tx, [i], self_tx, [i]);
+    assign_tx(txpass, xchild_tx, [i], xchild_tx, [i]);
+  }
+}
+
+component main {public [pubkey_of(self), 
+                        pubkey_of(child), 
+                        pubkey_of(parent), 
+                        signature_of(self_g_sig), 
+                        signature_of(self_s_sig),
+                        signature_of(self_t_sig),
+                        tx_of(self_tx)]} = dam_transaction_pass_main(DAM_WIDTH, DAM_HEIGHT);

@@ -20,6 +20,7 @@ type SignatureInternal = SignatureT<Uint8Array>;
 export type SecKey = BufferFromAble;
 
 export interface Crypto<T> {
+  canonize(x: T): T;
   hash(xs: T[]): T;
   hash_to_field(x: Hashable): Promise<T>;
   pubkey(sk: SecKey): PubKeyT<T>;
@@ -38,6 +39,7 @@ function crypto_bimap<U, V>(
   const rsig = (sig: SignatureT<V>) => ({ R8: rcp(sig.R8), S: sig.S });
 
   return {
+    canonize: (x: V) => l(c.canonize(r(x))),
     hash: (xs: V[]) => l(c.hash(xs.map(r))),
     hash_to_field: (x: Hashable) => c.hash_to_field(x).then(l),
     pubkey: (sk: SecKey) => lcp(c.pubkey(sk)),
@@ -53,6 +55,7 @@ async function make_crypto(): Promise<Crypto<Scalar>> {
   const eddsa = await circomlibjs.buildEddsa();
   const F = eddsa.F;
   const internal: Crypto<Internal> = {
+    canonize: (x: Internal) => x,
     hash: (xs: Internal[]) => eddsa.mimc7.multiHash(xs),
     hash_to_field: hash_bytes,
     pubkey: (sk: SecKey) => eddsa.prv2pub(sk),
@@ -61,6 +64,6 @@ async function make_crypto(): Promise<Crypto<Scalar>> {
       eddsa.verifyMiMC(msg, sig, pk),
   };
   const l = (x: Internal) => F.toObject(x) as Scalar;
-  const r = (x: Scalar) => F.fromObject(x) as Internal;
+  const r = (x: Scalar) => F.e(x) as Internal;
   return crypto_bimap(internal, l, r);
 }

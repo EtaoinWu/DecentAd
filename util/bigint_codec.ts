@@ -19,3 +19,7 @@ export function decode_bigint<T>(msg: string): T {
       typeof v === "string" && /^\-?\d+n$/.test(v) ? BigInt(v.slice(0, -1)) : v,
   );
 }
+
+export function sanitize_bigint<T>(msg: T): string {
+  return JSON.parse(encode_bigint_ext(msg));
+}

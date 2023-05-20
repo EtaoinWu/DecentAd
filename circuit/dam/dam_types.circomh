@@ -1,0 +1,26 @@
+#pragma once
+#include "macromagic.circomh"
+
+#define DAM_HEIGHT 8
+#define DAM_WIDTH 4
+#define BID_BITS 16
+
+#define pubkey_struct Ax,Ay
+#define new_pubkey(...) meta_new(__VA_ARGS__, pubkey_struct)
+#define assign_pubkey(...) meta_assign(__VA_ARGS__, pubkey_struct)
+#define pubkeys_of(...) meta_of(__VA_ARGS__, pubkey_struct)
+#define pubkey_of(x) pubkeys_of(x,)
+
+#define signature_struct R8x, R8y, S
+#define new_signature(...) meta_new(__VA_ARGS__, signature_struct)
+#define assign_signature(...) meta_assign(__VA_ARGS__, signature_struct)
+#define signatures_of(...) meta_of(__VA_ARGS__, signature_struct)
+#define signature_of(x) signatures_of(x,)
+
+#define tx_struct _who,_allo,_money
+#define new_tx(...) meta_new(__VA_ARGS__, tx_struct)
+#define assign_tx(...) meta_assign(__VA_ARGS__, tx_struct)
+#define copy_tx(...) meta_copy(__VA_ARGS__, tx_struct)
+#define equal_tx(...) meta_equal(__VA_ARGS__, tx_struct)
+#define txs_of(...) meta_of(__VA_ARGS__, tx_struct)
+#define tx_of(x) txs_of(x,)

@@ -1,0 +1,99 @@
+#pragma once
+
+// get number of arguments with __NARG__
+#define __NARG__(...)  __NARG_I_(__VA_ARGS__,__RSEQ_N())
+#define __NARG_I_(...) __ARG_N(__VA_ARGS__)
+#define __ARG_N( \
+      _1, _2, _3, _4, _5, _6, _7, _8, _9,_10, \
+     _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
+     _21,_22,_23,_24,_25,_26,_27,_28,_29,_30, \
+     _31,_32,_33,_34,_35,_36,_37,_38,_39,_40, \
+     _41,_42,_43,_44,_45,_46,_47,_48,_49,_50, \
+     _51,_52,_53,_54,_55,_56,_57,_58,_59,_60, \
+     _61,_62,_63,N,...) N
+#define __RSEQ_N() \
+     63,62,61,60,                   \
+     59,58,57,56,55,54,53,52,51,50, \
+     49,48,47,46,45,44,43,42,41,40, \
+     39,38,37,36,35,34,33,32,31,30, \
+     29,28,27,26,25,24,23,22,21,20, \
+     19,18,17,16,15,14,13,12,11,10, \
+     9,8,7,6,5,4,3,2,1,0
+
+// general definition for any function name
+#define _VFUNC_(name, n) name##n
+#define _VFUNC(name, n) _VFUNC_(name, n)
+#define VFUNC(func, ...) _VFUNC(func, __NARG__(__VA_ARGS__)) (__VA_ARGS__)
+#define VCALL(func, ...) func(__VA_ARGS__)
+#define JOIN(name, n) name##n
+#define SND(name, n) n
+#define JELEM(name, n) name.n
+
+#define FOREACHx(macro, x0) \
+    macro(x0)
+#define FOREACH3(macro, delim, x0) \
+    FOREACHx(macro, x0)
+#define FOREACH4(macro, delim, x0, ...) \
+    FOREACHx(macro, x0) delim \
+    FOREACH3(macro, delim, __VA_ARGS__)
+#define FOREACH5(macro, delim, x0, ...) \
+    FOREACHx(macro, x0) delim \
+    FOREACH4(macro, delim, __VA_ARGS__)
+#define FOREACH6(macro, delim, x0, ...) \
+    FOREACHx(macro, x0) delim \
+    FOREACH5(macro, delim, __VA_ARGS__)
+#define foreach(...) VFUNC(FOREACH, __VA_ARGS__)
+
+#define COMBx(prefix, suffix, name, joiner, x0) \
+    prefix name##x0 suffix
+#define COMB6(prefix, suffix, name, joiner, delim, x0) \
+    COMBx(prefix, suffix, name, joiner, x0)
+#define COMB7(prefix, suffix, name, joiner, delim, x0, ...) \
+    COMBx(prefix, suffix, name, joiner, x0) delim \
+    COMB6(prefix, suffix, name, joiner, delim, __VA_ARGS__)
+#define COMB8(prefix, suffix, name, joiner, delim, x0, ...) \
+    COMBx(prefix, suffix, name, joiner, x0) delim \
+    COMB7(prefix, suffix, name, joiner, delim, __VA_ARGS__)
+#define COMB9(prefix, suffix, name, joiner, delim, x0, ...) \
+    COMBx(prefix, suffix, name, joiner, x0) delim \
+    COMB8(prefix, suffix, name, joiner, delim, __VA_ARGS__)
+#define comb(...) VFUNC(COMB, __VA_ARGS__)
+
+#define COMBCOMMAx(prefix, suffix, name, joiner, x0) \
+    prefix name##x0 suffix
+#define COMBCOMMA6(prefix, suffix, name, joiner, delim, x0) \
+    COMBCOMMAx(prefix, suffix, name, joiner, x0)
+#define COMBCOMMA7(prefix, suffix, name, joiner, delim, x0, ...) \
+    COMBCOMMAx(prefix, suffix, name, joiner, x0), delim \
+    COMBCOMMA6(prefix, suffix, name, joiner, delim, __VA_ARGS__)
+#define COMBCOMMA8(prefix, suffix, name, joiner, delim, x0, ...) \
+    COMBCOMMAx(prefix, suffix, name, joiner, x0), delim \
+    COMBCOMMA7(prefix, suffix, name, joiner, delim, __VA_ARGS__)
+#define COMBCOMMA9(prefix, suffix, name, joiner, delim, x0, ...) \
+    COMBCOMMAx(prefix, suffix, name, joiner, x0), delim \
+    COMBCOMMA8(prefix, suffix, name, joiner, delim, __VA_ARGS__)
+#define combcomma(...) VFUNC(COMBCOMMA, __VA_ARGS__)
+
+#define TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) \
+    prefix lj1(ll, lj2(lm, x0)) lsuf binop rj(rl, x0) rsuf 
+#define TWOP12(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0)
+#define TWOP13(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0, ...) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) delim \
+    TWOP12(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, __VA_ARGS__)
+#define TWOP14(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0, ...) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) delim \
+    TWOP13(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, __VA_ARGS__)
+#define TWOP15(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0, ...) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) delim \
+    TWOP14(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, __VA_ARGS__)
+#define twop(...) VFUNC(TWOP, __VA_ARGS__)
+#define meta_new(type,x,array,...) \
+    comb(signal type,array,x,JOIN,;,__VA_ARGS__)
+#define meta_assign(comp,pref,larr,pk,rarr,...) \
+    twop(,comp,JELEM,pref,JOIN,larr,<==, pk, JOIN, rarr, ;, __VA_ARGS__)
+#define meta_copy(pref,larr,pk,rarr,...) \
+    twop(,,SND,pref,JOIN,larr,<==, pk, JOIN, rarr, ;, __VA_ARGS__)
+#define meta_equal(per,larr,pk,rarr,...) \
+    twop(,,SND,per,JOIN,larr,===, pk, JOIN, rarr, ;, __VA_ARGS__)
+#define meta_of(x, arr, ...) combcomma(,arr,x,JOIN,,__VA_ARGS__)

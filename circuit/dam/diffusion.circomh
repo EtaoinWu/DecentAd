@@ -1,0 +1,44 @@
+#pragma once
+
+#include "head.circomh"
+#include "base.circomh"
+#include "dam_types.circomh"
+#include "primitive.circomh"
+
+// two signature represents the same item
+template dam_diffusion() {
+  new_pubkey(input, self, );
+  new_pubkey(input, parent, );
+  new_signature(input, self_sig, );
+  new_signature(input, parent_sig, );
+  signal input seller;
+  signal input item;
+  signal output msg;
+  
+  component input_hasher = HASHER(3);
+  input_hasher.in[0] <== 1;
+  input_hasher.in[1] <== seller;
+  input_hasher.in[2] <== item;
+  input_hasher.out ==> msg;
+
+  component self_verifier = VERIFIER();  
+  self_verifier.enabled <== 1;
+  assign_pubkey(self_verifier, , , self, );
+  assign_signature(self_verifier, , , self_sig, );
+  self_verifier.M <== msg;
+
+  component parent_verifier = VERIFIER();
+  parent_verifier.enabled <== 1;
+  assign_pubkey(parent_verifier, , , parent, );
+  assign_signature(parent_verifier, , , parent_sig, );
+  parent_verifier.M <== msg;
+
+  component parent_self_different_Ax = IsEqual();
+  component parent_self_different_Ay = IsEqual();
+  parent_self_different_Ax.in[0] <== selfAx;
+  parent_self_different_Ax.in[1] <== parentAx;
+  
+  parent_self_different_Ay.in[0] <== selfAy;
+  parent_self_different_Ay.in[1] <== parentAy;
+  parent_self_different_Ax.out * parent_self_different_Ay.out === 0;
+}

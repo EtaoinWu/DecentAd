@@ -1,0 +1,15 @@
+#pragma once
+
+#define VERIFIER EdDSAMiMCVerifier
+#define HASHER(n) MyHash(n)
+
+template MyHash(n) {
+  signal input in[n];
+  signal output out;
+  component c = MultiMiMC7(n, 91);
+  c.k <== 0;
+  for (var i = 0; i < n; i++) {
+    c.in[i] <== in[i];
+  }
+  c.out ==> out;
+}

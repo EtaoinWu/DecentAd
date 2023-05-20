@@ -29,7 +29,6 @@ INPUTS := $(CIRCUIT_NAMES:%=$(SRC_DIR)/%.input.json)
 WITNESSES := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.wtns)
 
 PROOFS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.proof.json)
-PUBLICS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.public.json)
 
 VERIFYS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%_verify)
 
@@ -49,7 +48,7 @@ $(BUILD_DIR)/%.ptau:
 	$(dir_guard)
 	# $(SNARKJS) powersoftau new bn128 14 $@.phase1
 	# $(SNARKJS) powersoftau prepare phase2 $@.phase1 $@
-	wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_18.ptau -O $@
+	wget -q https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_18.ptau -O $@
 
 .PHONY : build
 build: $(GENERATED_CIRCUITS) $(R1CSS)
@@ -64,7 +63,7 @@ $(BUILD_DIR)/%.p.circom: $(SRC_DIR)/%.circompp
 
 $(BUILD_DIR)/%.r1cs: $(BUILD_DIR)/%.circom
 	$(dir_guard)
-	$(CIRCOM) $< -o $(dir $@) $(CIRCOM_FLAGS) 
+	$(CIRCOM) -l deps/circomlib/circuits $< -o $(dir $@) $(CIRCOM_FLAGS) 
 
 $(BUILD_DIR)/%.000.zkey: $(BUILD_DIR)/%.r1cs $(PTAU)
 	$(SNARKJS) groth16 setup $< $(PTAU) $@
@@ -81,16 +80,14 @@ create_keys: $(ZKEYS) $(ZKEY_FINALS) $(VKEYS)
 $(BUILD_DIR)/%.wtns: $(SRC_DIR)/%.input.json $(BUILD_DIR)/%.r1cs
 	$(NODE) $(BUILD_DIR)/$(*D)/$(*F)_js/generate_witness.js $(BUILD_DIR)/$(*D)/$(*F)_js/$(*F).wasm $< $@
 
-$(BUILD_DIR)/%.proof.json: $(BUILD_DIR)/%.final.zkey $(BUILD_DIR)/%.wtns
+$(BUILD_DIR)/%.proof.json $(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.final.zkey $(BUILD_DIR)/%.wtns
 	$(SNARKJS) groth16 prove $^ $@ $(BUILD_DIR)/$(*D)/$(*F).public.json
-
-$(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.proof.json
 
 .PHONY : witness
 witness: $(WITNESSES)
 
 .PHONY : prove
-prove: witness $(PROOFS) $(PUBLICS)
+prove: witness $(PROOFS)
 
 .PHONY : verify 
 verify: $(VERIFYS)

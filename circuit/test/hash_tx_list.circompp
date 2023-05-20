@@ -1,0 +1,5 @@
+pragma circom 2.1.5;
+
+#include "dam/transaction.circomh"
+
+component main = hash_tx_list(DAM_HEIGHT);
