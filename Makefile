@@ -27,6 +27,7 @@ VKEYS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.vkey.json)
 
 INPUTS := $(CIRCUIT_NAMES:%=$(SRC_DIR)/%.input.json)
 WITNESSES := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.wtns)
+PUBLICS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.public.json)
 
 PROOFS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.proof.json)
 
@@ -87,7 +88,7 @@ $(BUILD_DIR)/%.proof.json $(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.final.zkey 
 witness: $(WITNESSES)
 
 .PHONY : prove
-prove: witness $(PROOFS)
+prove: witness $(PROOFS) $(PUBLICS)
 
 .PHONY : verify 
 verify: $(VERIFYS)
