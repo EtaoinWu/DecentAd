@@ -28,23 +28,12 @@ jobs:
         run: |
           npm install -g snarkjs
       
-      - name: Install Circom
-        id: download_release_asset
-        uses: i3h/download-release-asset@v1
-        with:
-          owner: iden3
-          repo: circom
-          tag: v2.1.5
-          file: circom-linux-amd64
-          path: deps/circom
+      - name: Installing Circom
+        run: |
+          cargo install --git https://github.com/iden3/circom.git
       
-      - name: Add Execute Permissions
-        run: chmod +x deps/circom
-
       - name: Build with Make
         run: make build
-        env:
-          CIRCOM: deps/circom
 
       - name: Setup Deno
         # uses: denoland/setup-deno@v1
