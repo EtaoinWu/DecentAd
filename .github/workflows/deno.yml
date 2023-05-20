@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 18.x
       
-      - name: Install NPM Dependencies
+      - name: Install SnarkJS
         run: |
           npm install -g snarkjs
       
@@ -37,6 +37,9 @@ jobs:
           tag: v2.1.5
           file: circom-linux-amd64
           path: deps/circom
+      
+      - name: Add Execute Permissions
+        run: chmod +x deps/circom
 
       - name: Build with Make
         run: make build
