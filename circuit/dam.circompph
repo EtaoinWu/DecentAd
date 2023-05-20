@@ -82,22 +82,22 @@ template MyHash(n) {
     COMBCOMMA8(prefix, suffix, name, joiner, delim, __VA_ARGS__)
 #define combcomma(...) VFUNC(COMBCOMMA, __VA_ARGS__)
 
-#define TWOPx(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, x0) \
-    prefix lj1(ll, lj2(lm, x0)) binop rj(rl, x0) suffix 
-#define TWOP11(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, x0) \
-    TWOPx(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, x0)
-#define TWOP12(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, x0, ...) \
-    TWOPx(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, x0) delim \
-    TWOP11(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, __VA_ARGS__)
-#define TWOP13(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, x0, ...) \
-    TWOPx(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, x0) delim \
-    TWOP12(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, __VA_ARGS__)
-#define TWOP14(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, x0, ...) \
-    TWOPx(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, x0) delim \
-    TWOP13(prefix, ll, lj1, lm, lj2, binop, rl, rj, suffix, delim, __VA_ARGS__)
+#define TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) \
+    prefix lj1(ll, lj2(lm, x0)) lsuf binop rj(rl, x0) rsuf 
+#define TWOP12(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0)
+#define TWOP13(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0, ...) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) delim \
+    TWOP12(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, __VA_ARGS__)
+#define TWOP14(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0, ...) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) delim \
+    TWOP13(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, __VA_ARGS__)
+#define TWOP15(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, x0, ...) \
+    TWOPx(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, x0) delim \
+    TWOP14(prefix, ll, lj1, lm, lj2, lsuf, binop, rl, rj, rsuf, delim, __VA_ARGS__)
 #define twop(...) VFUNC(TWOP, __VA_ARGS__)
 #define meta_new(type,x,array,...) comb(signal type,array,x,JOIN,;,__VA_ARGS__)
-#define meta_assign(comp,pref,pk,array,...) twop(,comp,JELEM,pref,JOIN, <==, pk, JOIN, array, ;, __VA_ARGS__)
+#define meta_assign(comp,pref,larr,pk,rarr,...) twop(,comp,JELEM,pref,JOIN,larr,<==, pk, JOIN, rarr, ;, __VA_ARGS__)
 #define meta_of(x, arr, ...) combcomma(,arr,x,JOIN,,__VA_ARGS__)
 
 #define pubkey_struct Ax,Ay
@@ -130,14 +130,14 @@ template dam_diffusion() {
 
   component self_verifier = VERIFIER();  
   self_verifier.enabled <== 1;
-  assign_pubkey(self_verifier, , self, );
-  assign_signature(self_verifier, , self_sig, );
+  assign_pubkey(self_verifier, , , self, );
+  assign_signature(self_verifier, , , self_sig, );
   self_verifier.M <== msg;
 
   component parent_verifier = VERIFIER();
   parent_verifier.enabled <== 1;
-  assign_pubkey(parent_verifier, , parent, );
-  assign_signature(parent_verifier, , parent_sig, );
+  assign_pubkey(parent_verifier, , , parent, );
+  assign_signature(parent_verifier, , , parent_sig, );
   parent_verifier.M <== msg;
 
   component parent_self_different_Ax = IsEqual();
@@ -194,8 +194,8 @@ template dam_gather(width) {
   up_hasher.in[1] <== selfmax;
   up_hasher.out ==> up_verifier.M;
   up_verifier.enabled <== 1;
-  assign_pubkey(up_verifier, , self, );
-  assign_signature(up_verifier, , self_sig, );
+  assign_pubkey(up_verifier, , , self, );
+  assign_signature(up_verifier, , , self_sig, );
 
   component down_hasher[width];
   component down_verifier[width];
@@ -206,7 +206,57 @@ template dam_gather(width) {
     down_hasher[i].in[1] <== childmax[i];
     down_hasher[i].out ==> down_verifier[i].M;
     down_verifier[i].enabled <== child_enabled[i];
-    assign_pubkey(down_verifier[i], , child, [i]);
-    assign_signature(down_verifier[i], , child_sig, [i]);
+    assign_pubkey(down_verifier[i], , , child, [i]);
+    assign_signature(down_verifier[i], , , child_sig, [i]);
   }
 }
+
+template dam_scatter(width) {
+  new_pubkey(input, self, );
+  new_pubkey(input, parent, );
+  signal input child_enabled[width];
+  signal input childmax[width];
+  signal input selfbid;
+  signal input selfmax;
+  signal input parentoffer;
+  signal input selfoffer;
+  new_signature(input, self_sig, );
+  new_signature(input, parent_sig, );
+
+  component BIT_RANGE_VAR(parentoffer, 1, parentoffer);
+  component BIT_RANGE_VAR(selfoffer, 1, selfoffer);
+
+  component selfoffer_second_max = kth_in_array(width + 2, BID_BITS);
+  selfoffer_second_max.x <== selfoffer;
+  selfoffer_second_max.k <== 1;
+  for (var i = 0; i < width; i++) {
+    selfoffer_second_max.arr[i] <== childmax[i];
+  }
+  selfoffer_second_max.arr[width] <== selfbid;
+  selfoffer_second_max.arr[width + 1] <== parentoffer;
+  
+  component self_hasher = HASHER(2);
+  signal self_hash;
+  self_hasher.in[0] <== 3;
+  self_hasher.in[1] <== selfoffer;
+  self_hasher.out ==> self_hash;
+  
+  component parent_hasher = HASHER(2);
+  signal parent_hash;
+  parent_hasher.in[0] <== 3;
+  parent_hasher.in[1] <== parentoffer;
+  parent_hasher.out ==> parent_hash;
+
+  component self_verifier = VERIFIER();  
+  self_verifier.enabled <== 1;
+  assign_pubkey(self_verifier, , , self, );
+  assign_signature(self_verifier, , , self_sig, );
+  self_verifier.M <== self_hash;
+
+  component parent_verifier = VERIFIER();
+  parent_verifier.enabled <== 1;
+  assign_pubkey(parent_verifier, , , parent, );
+  assign_signature(parent_verifier, , , parent_sig, );
+  parent_verifier.M <== parent_hash;
+}
+

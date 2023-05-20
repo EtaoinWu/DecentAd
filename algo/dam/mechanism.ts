@@ -2,13 +2,27 @@ import { Node } from "../../comm/node-base.ts";
 import { Communicator } from "../../comm/node-comm.ts";
 import { NodeID } from "../../comm/node-prim.ts";
 import { Item, Price } from "./item.ts";
-import * as DAMMsg from "./message.ts";
+import {
+  DAMMessageHandler,
+  DAMWrapper,
+  DiffusionMsg,
+  DiffusionWitness,
+  GatherMsg,
+  GatherWitness,
+  Msg,
+  Proof,
+  ScatterMsg,
+  TransactionUnit,
+  Witness,
+} from "./message.ts";
 import { remove_element } from "../../util/collection.ts";
 import { max } from "../../util/algorithm.ts";
 import { PubKey, SecKey } from "../../util/crypto.ts";
 
 export interface DAMBaseSetup {
   priv_key: SecKey;
+  is_generate_witness?: boolean;
+  is_generate_proof?: boolean;
 }
 
 export interface DAMSellerSetup extends DAMBaseSetup {
@@ -22,27 +36,22 @@ export interface DAMBuyerSetup extends DAMBaseSetup {
 
 export type DAMSetup = DAMSellerSetup | DAMBuyerSetup;
 
-export class DAMNodeBase<T = void> extends Node<DAMMsg.Msg, T> {
+export class DAMNodeBase<T = void> extends Node<Msg, T> {
   base_setup: DAMBaseSetup;
-  mh: DAMMsg.DAMMessageHandler | null;
+  mh: DAMMessageHandler | null;
   pub_key: PubKey | null;
   neighbor_pk: Map<NodeID, PubKey>;
 
   constructor(
     me: NodeID,
-    comm: Communicator<DAMMsg.Msg>,
+    comm: Communicator<Msg>,
     base_setup: DAMBaseSetup,
   ) {
     super(me, comm);
     this.base_setup = base_setup;
-    this.mh = null;
-    this.pub_key = null;
+    this.mh = new DAMMessageHandler(base_setup.priv_key);
+    this.pub_key = this.mh.pub_key;
     this.neighbor_pk = new Map();
-  }
-
-  async init_handler() {
-    this.mh = await DAMMsg.make_message_handler(this.base_setup.priv_key);
-    this.pub_key = this.mh.pub_key();
   }
 
   async exchange_pubkeys() {
@@ -50,7 +59,7 @@ export class DAMNodeBase<T = void> extends Node<DAMMsg.Msg, T> {
     const neighbors = await this.comm.neighbors();
     const pub_key_msg = await mh.wrap({
       type: "DAM_PubKey",
-      pub_key: mh.pub_key(),
+      pub_key: mh.pub_key,
     });
     await Promise.all(neighbors.map(async (node) => {
       await this.comm.send_message(node, pub_key_msg);
@@ -66,20 +75,19 @@ export class DAMNodeBase<T = void> extends Node<DAMMsg.Msg, T> {
   }
 }
 
-export class DAMSellerNode extends DAMNodeBase<DAMMsg.TransactionUnit[]> {
+export class DAMSellerNode extends DAMNodeBase<TransactionUnit[]> {
   setup: DAMSellerSetup;
 
   constructor(
     me: NodeID,
-    comm: Communicator<DAMMsg.Msg>,
+    comm: Communicator<Msg>,
     setup: DAMSellerSetup,
   ) {
     super(me, comm, setup);
     this.setup = setup;
   }
 
-  async run(): Promise<DAMMsg.TransactionUnit[]> {
-    await this.init_handler();
+  async run(): Promise<TransactionUnit[]> {
     await this.exchange_pubkeys();
 
     const mh = this.mh!;
@@ -134,7 +142,7 @@ export class DAMSellerNode extends DAMNodeBase<DAMMsg.TransactionUnit[]> {
       (acc, x) => acc + x.transfer,
       0n,
     );
-    const seller_tx: DAMMsg.TransactionUnit = {
+    const seller_tx: TransactionUnit = {
       buyer: this.me,
       transfer: -total_transfer,
       allocation: 0,
@@ -145,11 +153,12 @@ export class DAMSellerNode extends DAMNodeBase<DAMMsg.TransactionUnit[]> {
 
 export class DAMBuyerNode extends DAMNodeBase {
   setup: DAMBuyerSetup;
-  witnesses: DAMMsg.Witness[] = [];
+  witnesses: Witness[] = [];
+  proofs: Proof[] = [];
 
   constructor(
     me: NodeID,
-    comm: Communicator<DAMMsg.Msg>,
+    comm: Communicator<Msg>,
     setup: DAMBuyerSetup,
   ) {
     super(me, comm, setup);
@@ -157,7 +166,6 @@ export class DAMBuyerNode extends DAMNodeBase {
   }
 
   async run(): Promise<void> {
-    await this.init_handler();
     await this.exchange_pubkeys();
 
     const mh = this.mh!;
@@ -181,13 +189,19 @@ export class DAMBuyerNode extends DAMNodeBase {
     const price = val;
 
     const d_down_msg = await mh.wrap(d_up_unwrapped);
-    this.witnesses.push(
-      await mh.diffusion_witness(
-        d_up_msg as DAMMsg.DAMWrapper<DAMMsg.DiffusionMsg>,
+    if (this.base_setup.is_generate_witness) {
+      const d_witness = await mh.diffusion_witness(
+        d_up_msg as DAMWrapper<DiffusionMsg>,
         d_down_msg,
         this.neighbor_pk.get(parent)!,
-      ),
-    );
+      );
+      this.witnesses.push(d_witness);
+      if (this.base_setup.is_generate_proof) {
+        this.proofs.push(
+          await mh.provers[this.proofs.length].full_prove(d_witness),
+        );
+      }
+    }
 
     await Promise.all(children.map(async (node) => {
       await this.comm.send_message(
@@ -226,21 +240,27 @@ export class DAMBuyerNode extends DAMNodeBase {
       type: "DAM_Gather",
       subtree_max: max_price,
     });
-    this.witnesses.push(
-      await mh.gather_witness(
+    if (this.base_setup.is_generate_witness) {
+      const g_witness = await mh.gather_witness(
         gather_up_msg,
-        g_down_msgs as DAMMsg.DAMWrapper<DAMMsg.GatherMsg>[],
+        g_down_msgs as DAMWrapper<GatherMsg>[],
         children.map((x) => this.neighbor_pk.get(x)!),
         price,
         max_price,
-      ),
-    );
+      );
+      this.witnesses.push(g_witness);
+      if (this.base_setup.is_generate_proof) {
+        this.proofs.push(
+          await mh.provers[this.proofs.length].full_prove(g_witness),
+        );
+      }
+    }
     await this.comm.send_message(parent, gather_up_msg);
 
     // Round 3 -- Scatter
-    const s_up_msg = await this.comm.get_message(parent);
+    const s_up_msg = (await this.comm.get_message(parent)).message;
     const s_up_unwrapped = await mh.verify_and_unwrap(
-      s_up_msg.message,
+      s_up_msg,
       this.neighbor_pk.get(parent)!,
     );
     if (s_up_unwrapped.type !== "DAM_Scatter") {
@@ -259,11 +279,24 @@ export class DAMBuyerNode extends DAMNodeBase {
       await this.comm.send_message(parent, tx_msg);
     } else {
       // Resell
-      const scatter_down_msg = await mh.wrap({
+      const s_down_msg = await mh.wrap({
         type: "DAM_Scatter",
         external_max: child_offer,
       });
-      await this.comm.send_message(max_child, scatter_down_msg);
+      if (this.base_setup.is_generate_witness) {
+        const s_witness = await mh.scatter_witness(
+          s_up_msg as DAMWrapper<ScatterMsg>,
+          s_down_msg,
+          ...this.witnesses as [DiffusionWitness, GatherWitness],
+        );
+        this.witnesses.push(s_witness);
+        if (this.base_setup.is_generate_proof) {
+          this.proofs.push(
+            await mh.provers[this.proofs.length].full_prove(s_witness),
+          );
+        }
+      }
+      await this.comm.send_message(max_child, s_down_msg);
 
       // Round 4 -- Transaction Response
       const tx_down_msg = await this.comm.get_message(max_child);

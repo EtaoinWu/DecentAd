@@ -32,10 +32,10 @@ jobs:
           deno-version: v1.x
 
       - name: Verify formatting
-        run: deno task check_fmt
+        run: deno fmt --check
 
       - name: Run linter
-        run: deno task lint
+        run: deno lint
 
       - name: Run tests
         run: deno test -A

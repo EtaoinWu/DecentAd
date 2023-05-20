@@ -13,6 +13,20 @@ template in_array(n) {
     eq[n-1] === 0;
 }
 
+template bits_of(w) {
+    signal input in;
+    signal output bits[w];
+
+    var total = 0;
+    for (var i = 0; i < w; i++) {
+        bits[i] <-- (in >> i) & 1;
+        BOOL(bits[i]);
+        total += bits[i] * (1 << i);
+    }
+
+    total - in === 0;
+}
+
 template bit_range(w) {
     signal input enabled;
     signal input in;
@@ -28,3 +42,70 @@ template bit_range(w) {
     }
     (total - in) * enabled === 0;
 }
+
+template threeway(w) {
+    signal input in;
+    signal output out;
+    out <-- (in > 0 ? 1 : (in < 0 ? -1 : 0));
+    signal neq0;
+    neq0 <== (1 + out) * (1 - out);
+    neq0 * out === 0;
+    signal abs_plus_ifzero;
+    abs_plus_ifzero <== in * out + neq0;
+    component in_range = bit_range(w);
+    in_range.enabled <== 1;
+    in_range.in <== abs_plus_ifzero;
+}
+
+template max_in_array(n, w) {
+    signal input x;
+    signal input arr[n];
+
+    component x_in_array = in_array(n);
+    x_in_array.x <== x;
+    for (var i = 0; i < n; i++) {
+        x_in_array.arr[i] <== arr[i];
+    }
+    component geq[n];
+    for (var i = 0; i < n; i++) {
+        geq[i] = bit_range(w);
+        geq[i].enabled <== 1;
+        geq[i].in <== x - arr[i];
+    }
+}
+
+template kth_in_array(n, w) {
+    signal input x;
+    signal input k;
+    signal input arr[n];
+
+    component x_in_array = in_array(n);
+    x_in_array.x <== x;
+    for (var i = 0; i < n; i++) {
+        x_in_array.arr[i] <== arr[i];
+    }
+    component compx[n];
+    signal comp_result[n];
+    signal output gtx[n];
+    var total_gtx = 0;
+    signal output gex[n];
+    var total_gex = 0;
+    for (var i = 0; i < n; i++) {
+        compx[i] = threeway(w);
+        compx[i].in <== x - arr[i];
+        comp_result[i] <== compx[i].out;
+        gtx[i] <== (comp_result[i]) * (comp_result[i] - 1) / 2;
+        gex[i] <== 1 - (comp_result[i] + 1) * (comp_result[i]) / 2;
+        total_gtx += gtx[i];
+        total_gex += gex[i];
+    }
+    // total_gtx <= k
+    // total_gex > k
+    component total_gtx_leq_k = bit_range(w);
+    total_gtx_leq_k.enabled <== 1;
+    total_gtx_leq_k.in <== k - total_gtx;
+    component total_gex_gt_k = bit_range(w);
+    total_gex_gt_k.enabled <== 1;
+    total_gex_gt_k.in <== total_gex - k - 1;
+}
+

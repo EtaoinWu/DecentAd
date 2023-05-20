@@ -12,8 +12,11 @@ BUILD_DIR ?= ./out
 
 PTAU := $(BUILD_DIR)/my.ptau
 
-CIRCUITS := $(wildcard $(SRC_DIR)/*.circom)
-CIRCUITPPS := $(wildcard $(SRC_DIR)/*.circompp)
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+dir_guard=@mkdir -p $(@D)
+
+CIRCUITS := $(call rwildcard,$(SRC_DIR),*.circom)
+CIRCUITPPS := $(call rwildcard,$(SRC_DIR),*.circompp)
 CIRCUIT_NAMES := $(CIRCUITS:$(SRC_DIR)/%.circom=%.c) $(CIRCUITPPS:$(SRC_DIR)/%.circompp=%.p)
 DEPS := $(CIRCUITPPS:$(SRC_DIR)/%.circompp=$(BUILD_DIR)/%.p.d)
 GENERATED_CIRCUITS := $(CIRCUIT_NAMES:%=$(BUILD_DIR)/%.circom)
@@ -46,7 +49,7 @@ $(BUILD_DIR):
 	$(MKDIR) -p $@
 
 $(BUILD_DIR)/%.ptau:
-	@mkdir -p $(BUILD_DIR)
+	$(dir_guard)
 	$(SNARKJS) powersoftau new bn128 14 $@.phase1
 	$(SNARKJS) powersoftau prepare phase2 $@.phase1 $@
 
@@ -54,15 +57,15 @@ $(BUILD_DIR)/%.ptau:
 build: $(GENERATED_CIRCUITS) $(R1CSS)
 
 $(BUILD_DIR)/%.c.circom: $(SRC_DIR)/%.circom
-	@mkdir -p $(BUILD_DIR)
+	$(dir_guard)
 	cp $< $@
 
 $(BUILD_DIR)/%.p.circom: $(SRC_DIR)/%.circompp
-	@mkdir -p $(BUILD_DIR)
+	$(dir_guard)
 	gcc -E -x c -P -C -I $(SRC_DIR) -I $(BUILD_DIR) -MMD -MP -MT $@ -o $@ $<
 
 $(BUILD_DIR)/%.r1cs: $(BUILD_DIR)/%.circom
-	@mkdir -p $(BUILD_DIR)
+	$(dir_guard)
 	$(CIRCOM) $< -o $(dir $@) $(CIRCOM_FLAGS) 
 
 $(BUILD_DIR)/%.000.zkey: $(BUILD_DIR)/%.r1cs $(PTAU)
@@ -78,10 +81,10 @@ $(BUILD_DIR)/%.vkey.json: $(BUILD_DIR)/%.final.zkey
 create_keys: $(ZKEYS) $(ZKEY_FINALS) $(VKEYS)
 
 $(BUILD_DIR)/%.wtns: $(SRC_DIR)/%.input.json $(BUILD_DIR)/%.r1cs
-	$(NODE) $(BUILD_DIR)/$(*F)_js/generate_witness.js $(BUILD_DIR)/$(*F)_js/$(*F).wasm $< $@
+	$(NODE) $(BUILD_DIR)/$(*D)/$(*F)_js/generate_witness.js $(BUILD_DIR)/$(*D)/$(*F)_js/$(*F).wasm $< $@
 
 $(BUILD_DIR)/%.proof.json: $(BUILD_DIR)/%.final.zkey $(BUILD_DIR)/%.wtns
-	$(SNARKJS) groth16 prove $^ $@ $(BUILD_DIR)/$(*F).public.json
+	$(SNARKJS) groth16 prove $^ $@ $(BUILD_DIR)/$(*D)/$(*F).public.json
 
 $(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.proof.json
 

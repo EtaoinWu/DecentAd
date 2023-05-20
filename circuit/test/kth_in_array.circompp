@@ -1,0 +1,5 @@
+pragma circom 2.1.5;
+
+#include "base.circomh"
+
+component main {public [x, arr, k]} = kth_in_array(9, 16);

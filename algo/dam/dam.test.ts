@@ -17,6 +17,8 @@ async function run_test(
   bids: number[],
   belongs: string[],
   expected_result: { buyer: NodeID; transfer: bigint; allocation: number }[],
+  is_generate_witness?: boolean,
+  is_generate_proof?: boolean,
 ): Promise<void> {
   const item = "very good stuff";
   const bids_bigint = bids.map(BigInt);
@@ -37,12 +39,16 @@ async function run_test(
       return new DAMSellerNode(id, comm, {
         item,
         priv_key: `private key of ${id}`,
+        is_generate_witness,
+        is_generate_proof,
       });
     } else {
       return new DAMBuyerNode(id, comm, {
         parent: node_ids[e.parent],
         evaluation: const_resolve(e.bid),
         priv_key: `private key of ${id}`,
+        is_generate_witness,
+        is_generate_proof,
       });
     }
   };
@@ -69,7 +75,7 @@ async function run_test(
   });
 }
 
-Deno.test("DAM small example 1", async (t) => {
+Deno.test("DAM small example 1 (with witness)", async (t) => {
   const n = 7;
   const seller = 0;
   const node_ids = Array.from({ length: n }, (_, i) => i.toString());
@@ -85,10 +91,10 @@ Deno.test("DAM small example 1", async (t) => {
     { buyer: "0", transfer: 1n, allocation: 0 },
     { buyer: "1", transfer: 4n, allocation: 0 },
     { buyer: "3", transfer: -5n, allocation: 1 },
-  ]);
+  ], true);
 });
 
-Deno.test("DAM small example 2: early stop", async (t) => {
+Deno.test("DAM small example 2: early stop (with proofs)", async (t) => {
   const n = 7;
   const seller = 0;
   const node_ids = Array.from({ length: n }, (_, i) => i.toString());
@@ -100,10 +106,21 @@ Deno.test("DAM small example 2: early stop", async (t) => {
   );
   const belongs = ["a", "b", "a", "a", "c", "c", "c"];
   const bids = [0, 3, 1, 2, 5, 1, 1];
-  await run_test(t, graph, node_ids, parents, types, bids, belongs, [
-    { buyer: "0", transfer: 1n, allocation: 0 },
-    { buyer: "1", transfer: -1n, allocation: 1 },
-  ]);
+  await run_test(
+    t,
+    graph,
+    node_ids,
+    parents,
+    types,
+    bids,
+    belongs,
+    [
+      { buyer: "0", transfer: 1n, allocation: 0 },
+      { buyer: "1", transfer: -1n, allocation: 1 },
+    ],
+    true,
+    true,
+  );
 });
 
 Deno.test("DAM mid example 1: in paper", async (t) => {

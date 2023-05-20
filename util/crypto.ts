@@ -1,4 +1,4 @@
-import * as circomlibjs from "https://esm.sh/circomlibjs@0.1.7?pin=v122";
+import * as circomlibjs from "npm:circomlibjs@0.1.7";
 import { Buffer } from "std/io/buffer.ts";
 import { hash_bytes, Hashable } from "./hash.ts";
 
@@ -47,9 +47,9 @@ function crypto_bimap<U, V>(
   };
 }
 
-let crypto: Crypto<Scalar> | null = null;
+export const crypto: Crypto<Scalar> = await make_crypto();
 
-async function make_crypto_work(): Promise<Crypto<Scalar>> {
+async function make_crypto(): Promise<Crypto<Scalar>> {
   const eddsa = await circomlibjs.buildEddsa();
   const F = eddsa.F;
   const internal: Crypto<Internal> = {
@@ -65,9 +65,3 @@ async function make_crypto_work(): Promise<Crypto<Scalar>> {
   return crypto_bimap(internal, l, r);
 }
 
-export async function make_crypto(): Promise<Crypto<Scalar>> {
-  if (crypto === null) {
-    crypto = await make_crypto_work();
-  }
-  return crypto;
-}
