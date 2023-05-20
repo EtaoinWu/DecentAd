@@ -33,7 +33,7 @@ jobs:
           cargo install --git https://github.com/iden3/circom.git
       
       - name: Build with Make
-        run: make build
+        run: make
 
       - name: Setup Deno
         # uses: denoland/setup-deno@v1
