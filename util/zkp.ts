@@ -1,6 +1,7 @@
 import * as snarkjs from "https://esm.sh/snarkjs@0.6.1?pin=v122";
 import { WitnessCalculatorBuilder } from "https://esm.sh/circom_runtime@0.1.22?pin=v122";
 import { crypto, Scalar } from "./crypto.ts";
+import { encode_bigint_ext } from "./bigint_codec.ts";
 
 const groth16 = snarkjs.groth16 as {
   prove: (
@@ -102,9 +103,13 @@ export class ZKProver {
 }
 
 export class DummyProver {
-  constructor() {}
+  name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
 
-  full_prove<T extends InputT>(_: T) {
+  full_prove<T extends InputT>(witness: T) {
+    console.log(`Prover ${this.name} is proving ${encode_bigint_ext(witness)}`);
     return Promise.resolve({ proof: {}, publicSignals: {} });
   }
 

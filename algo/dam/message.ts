@@ -15,8 +15,8 @@ import {
 } from "../../util/bigint_codec.ts";
 import { aoo2ooa, fix_length } from "../../util/collection.ts";
 
-export const max_height = 8;
-export const max_width = 4;
+export const max_height = 32;
+export const max_width = 32;
 
 export type PubkeyExchangeMsg = {
   type: "DAM_PubKey";

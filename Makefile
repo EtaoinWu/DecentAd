@@ -47,9 +47,9 @@ ptau: $(PTAU)
 
 $(BUILD_DIR)/%.ptau:
 	$(dir_guard)
-	# $(SNARKJS) powersoftau new bn128 14 $@.phase1
+	# $(SNARKJS) powersoftau new bn128 20 $@.phase1
 	# $(SNARKJS) powersoftau prepare phase2 $@.phase1 $@
-	wget -q https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_18.ptau -O $@
+	wget -q https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_20.ptau -O $@
 
 .PHONY : build
 build: $(GENERATED_CIRCUITS) $(R1CSS)
@@ -64,25 +64,25 @@ $(BUILD_DIR)/%.p.circom: $(SRC_DIR)/%.circompp
 
 $(BUILD_DIR)/%.r1cs: $(BUILD_DIR)/%.circom
 	$(dir_guard)
-	$(CIRCOM) -l deps/circomlib/circuits $< -o $(dir $@) $(CIRCOM_FLAGS) 
+	time $(CIRCOM) -l deps/circomlib/circuits $< -o $(dir $@) $(CIRCOM_FLAGS) 
 
 $(BUILD_DIR)/%.000.zkey: $(BUILD_DIR)/%.r1cs $(PTAU)
-	$(SNARKJS) groth16 setup $< $(PTAU) $@
+	time $(SNARKJS) groth16 setup $< $(PTAU) $@
 
 $(BUILD_DIR)/%.final.zkey: $(BUILD_DIR)/%.000.zkey
-	$(SNARKJS) zkey beacon $< $@ 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 10
+	time $(SNARKJS) zkey beacon $< $@ 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 10
 
 $(BUILD_DIR)/%.vkey.json: $(BUILD_DIR)/%.final.zkey
-	$(SNARKJS) zkey export verificationkey $< $@
+	time $(SNARKJS) zkey export verificationkey $< $@
 
 .PHONY : create_keys
 create_keys: $(ZKEYS) $(ZKEY_FINALS) $(VKEYS)
 
 $(BUILD_DIR)/%.wtns: $(SRC_DIR)/%.input.json $(BUILD_DIR)/%.r1cs
-	$(NODE) $(BUILD_DIR)/$(*D)/$(*F)_js/generate_witness.js $(BUILD_DIR)/$(*D)/$(*F)_js/$(*F).wasm $< $@
+	time $(NODE) $(BUILD_DIR)/$(*D)/$(*F)_js/generate_witness.js $(BUILD_DIR)/$(*D)/$(*F)_js/$(*F).wasm $< $@
 
 $(BUILD_DIR)/%.proof.json $(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.final.zkey $(BUILD_DIR)/%.wtns
-	$(SNARKJS) groth16 prove $^ $@ $(BUILD_DIR)/$(*D)/$(*F).public.json
+	time $(SNARKJS) groth16 prove $^ $@ $(BUILD_DIR)/$(*D)/$(*F).public.json
 
 .PHONY : witness
 witness: $(WITNESSES)

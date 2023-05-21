@@ -1,9 +1,9 @@
 #pragma once
 #include "macromagic.circomh"
 
-#define DAM_HEIGHT 8
-#define DAM_WIDTH 4
-#define BID_BITS 16
+#define DAM_HEIGHT 32
+#define DAM_WIDTH 32
+#define BID_BITS 64
 
 #define pubkey_struct Ax,Ay
 #define new_pubkey(...) meta_new(__VA_ARGS__, pubkey_struct)
