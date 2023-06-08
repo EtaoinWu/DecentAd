@@ -82,7 +82,7 @@ $(BUILD_DIR)/%.wtns: $(SRC_DIR)/%.input.json $(BUILD_DIR)/%.r1cs
 	time $(NODE) $(BUILD_DIR)/$(*D)/$(*F)_js/generate_witness.js $(BUILD_DIR)/$(*D)/$(*F)_js/$(*F).wasm $< $@
 
 $(BUILD_DIR)/%.proof.json $(BUILD_DIR)/%.public.json: $(BUILD_DIR)/%.final.zkey $(BUILD_DIR)/%.wtns
-	time $(SNARKJS) groth16 prove $^ $@ $(BUILD_DIR)/$(*D)/$(*F).public.json
+	time $(SNARKJS) groth16 prove $^ $(BUILD_DIR)/$(*D)/$(*F).proof.json $(BUILD_DIR)/$(*D)/$(*F).public.json
 
 .PHONY : witness
 witness: $(WITNESSES)
@@ -91,7 +91,7 @@ witness: $(WITNESSES)
 prove: witness $(PROOFS) $(PUBLICS)
 
 .PHONY : verify 
-verify: $(VERIFYS)
+verify: prove $(VERIFYS)
 
 .PHONE : $(VERIFYS)
 $(BUILD_DIR)/%_verify: $(BUILD_DIR)/%.vkey.json $(BUILD_DIR)/%.public.json $(BUILD_DIR)/%.proof.json

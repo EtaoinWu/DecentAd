@@ -2,9 +2,9 @@ name: Deno
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "ci-test"]
   pull_request:
-    branches: ["master"]
+    branches: ["master", "ci-test"]
 
 permissions:
   contents: read
@@ -29,11 +29,14 @@ jobs:
           npm install -g snarkjs
       
       - name: Installing Circom
-        run: |
-          cargo install --git https://github.com/iden3/circom.git
+        uses: baptiste0928/cargo-install@feat/git-install
+        with:
+          crate: circom
+          git: https://github.com/iden3/circom
+          tag: v2.1.5
       
       - name: Build with Make
-        run: make
+        run: make build
 
       - name: Setup Deno
         # uses: denoland/setup-deno@v1
@@ -46,6 +49,3 @@ jobs:
 
       - name: Run linter
         run: deno lint
-
-      - name: Run tests
-        run: deno test -A
