@@ -33,7 +33,7 @@ jobs:
         with:
           crate: circom
           git: https://github.com/iden3/circom
-          tag: 127414e9088cc017a357233f30f3fd7d91a8906c
+          rev: 127414e9088cc017a357233f30f3fd7d91a8906c
       
       - name: Build with Make
         run: make build
